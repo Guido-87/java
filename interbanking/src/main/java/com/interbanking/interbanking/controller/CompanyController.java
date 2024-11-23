@@ -20,11 +20,6 @@ public class CompanyController {
     @Autowired
     TransferService transferService;
 
-    @GetMapping("/")
-    private String index() {
-        return "Prueba";
-    }
-
     @GetMapping("/companies")
     private List<Company> getAllCompanies() {
         return companyService.getAllCompanies();
