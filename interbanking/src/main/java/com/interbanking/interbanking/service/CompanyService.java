@@ -21,14 +21,12 @@ public class CompanyService {
     }
 
     public List<Company> getNewCompanies() {
-        List<Company> allCompanies = new ArrayList<Company>();
         List<Company> newCompanies = new ArrayList<Company>();
-        companyRepository.findAll().forEach(allCompanies::add);
-        for (Company c : allCompanies) {
+        companyRepository.findAll().forEach(c -> {
             if (c.getFechaAdhesion().after(DateUtils.getDateAMonthBefore())) {
                 newCompanies.add(c);
             }
-        }
+        });
         return newCompanies;
     }
 
