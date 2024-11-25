@@ -17,13 +17,11 @@ public class TransferService {
 
     public List<Company> getCompaniesWithTransfers() {
         List<Company> companies = new ArrayList<Company>();
-        List<Transfer> transfers = new ArrayList<Transfer>();
-        transferRepository.findAll().forEach(transfers::add);
-        for (Transfer t : transfers) {
+        transferRepository.findAll().forEach(t -> {
             if (t.getFecha().after(DateUtils.getDateAMonthBefore())) {
                 companies.add(t.getEmpresa());
             }
-        }
+        });
         return companies;
     }
 }
