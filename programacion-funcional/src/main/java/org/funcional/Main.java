@@ -233,13 +233,43 @@ public class Main {
                 new Producto("Carne", "carnes", 2, 6.5)
         );
 
-        // Filtrar productos de la categoría frutas
+        // 1. Filtrar productos de la categoría frutas
         List<Producto> frutas = productos.stream()
                 .filter(p -> p.getCategoria().equals("frutas"))
                 .collect(Collectors.toList());
-        System.out.println("Productos que son frutas " + frutas);
+        System.out.println("\n 1. Productos que son frutas " + frutas);
 
-        // Calcular el precio total de los productos lácteos
+        // 2. Calcular el precio total de los productos lácteos
+        double totalLacteos = productos.stream()
+                .filter(p -> p.getCategoria().equals("lácteos"))
+                .mapToDouble(Producto::getPrecio)
+                .sum();
+        System.out.println("\n 2. La suma total de los precios de los lácteos es: " + totalLacteos);
+
+        // 3. Obtener el producto con el precio más bajo
+        Producto prodMasBarato = productos.stream()
+                .min(Comparator.comparingDouble(Producto::getPrecio))
+                .orElse(null);
+        System.out.println("\n 3. El producto más barato es: " + prodMasBarato);
+
+        // 4. Agrupar productos por categoría
+        Map<String, List<Producto>> prodPorCategoria = productos.stream()
+                .collect(Collectors.groupingBy(Producto::getCategoria));
+        System.out.println("\n 4. Productos agrupados por categoría " + prodPorCategoria);
+
+        // 5. Calcular el precio promedio de los productos por categoría
+        Map<String, Double> promedioPorCategoria = productos.parallelStream()
+                .collect(Collectors.groupingBy(Producto::getCategoria,
+                        Collectors.averagingDouble(p -> p.getPrecio())
+                ));
+        System.out.println("\n 5. El precio por categoría es: " + promedioPorCategoria);
+
+        // 6. Obtener la categoría con el precio promedio más alto
+        String categoriaMasCara = promedioPorCategoria.entrySet().parallelStream()
+                .max(Comparator.comparingDouble(Map.Entry::getValue))
+                .map(Map.Entry::getKey)
+                .orElse("No disponible");
+        System.out.println("\n 6. Categoría con el precio promedio más alto es: " + categoriaMasCara);
     }
 
     private static Optional<String> obtenerDireccion(Optional<Cliente> cliente) {
