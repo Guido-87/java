@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="poo" />
         <module name="directa24-back-end-dev-challenge" />
+        <module name="algoritmos" />
         <module name="recargapay" />
         <module name="programacion-funcional" />
         <module name="hilos" />
