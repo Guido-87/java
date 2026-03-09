@@ -1,5 +1,10 @@
 package org.example;
 
+import org.example.creators.EnvioCamionCreator;
+import org.example.creators.EnvioCorreoCreator;
+import org.example.creators.EnvioCreator;
+import org.example.creators.EnvioMotoCreator;
+
 import java.util.Arrays;
 
 public class Main {
@@ -25,5 +30,13 @@ public class Main {
         System.out.println(config1 == config2);
         System.out.println(config1);
         System.out.println(config2);
+        System.out.println("-----");
+
+        EnvioCreator envioCorreo = new EnvioCorreoCreator();
+        envioCorreo.procesarEnvio();
+        EnvioCreator envioMoto = new EnvioMotoCreator();
+        envioMoto.procesarEnvio();
+        EnvioCreator envioCamion = new EnvioCamionCreator();
+        envioCamion.procesarEnvio();
     }
 }
