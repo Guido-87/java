@@ -7,10 +7,14 @@
         <option value="$PROJECT_DIR$/recargapay/pom.xml" />
         <option value="$PROJECT_DIR$/backend-dev-challenge-master/pom.xml" />
         <option value="$PROJECT_DIR$/programacion-funcional/pom.xml" />
+        <option value="$PROJECT_DIR$/hilos/pom.xml" />
+        <option value="$PROJECT_DIR$/poo/pom.xml" />
+        <option value="$PROJECT_DIR$/algoritmos/pom.xml" />
+        <option value="$PROJECT_DIR$/algoritmos-y-patrones/pom.xml" />
       </list>
     </option>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_X" default="true" project-jdk-name="23 (2)" project-jdk-type="JavaSDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_X" default="true" project-jdk-name="23" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>
