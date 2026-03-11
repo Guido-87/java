@@ -5,10 +5,11 @@ import org.example.creators.EnvioCorreoCreator;
 import org.example.creators.EnvioCreator;
 import org.example.creators.EnvioMotoCreator;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         int[][] matriz = new int[6][6];
         System.out.println(matriz.length);
         for (int i=0 ; i<matriz.length ; i++) {
@@ -30,6 +31,8 @@ public class Main {
         System.out.println(config1 == config2);
         System.out.println(config1);
         System.out.println(config2);
+        System.out.println(config1.getPropiedad("carpeta"));
+        System.out.println(config1.getPropiedad("url"));
         System.out.println("-----");
 
         EnvioCreator envioCorreo = new EnvioCorreoCreator();
