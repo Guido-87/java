@@ -8,6 +8,7 @@
 	<groupId>com.spring</groupId>
 	<artifactId>ia</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<name>ia</name>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -17,10 +18,8 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<spring-ai.version>1.0.0</spring-ai.version>
-		<maven.compiler.release>17</maven.compiler.release>
+		<spring-ai.version>1.0.0-M1</spring-ai.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring.aot.enabled>true</spring.aot.enabled>
 	</properties>
 
 	<dependencyManagement>
@@ -28,7 +27,7 @@
 			<dependency>
 				<groupId>org.springframework.ai</groupId>
 				<artifactId>spring-ai-bom</artifactId>
-				<version>1.0.0-M1</version>
+				<version>${spring-ai.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -36,47 +35,30 @@
 	</dependencyManagement>
 
 	<dependencies>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-openai-spring-boot-starter</artifactId>
 		</dependency>
-
 	</dependencies>
+
 	<repositories>
 		<repository>
 			<id>spring-milestones</id>
 			<url>https://repo.spring.io/milestone</url>
 		</repository>
 	</repositories>
+	
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<layers>
-						<enabled>true</enabled>
-					</layers>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>repackage</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.graalvm.buildtools</groupId>
-				<artifactId>native-maven-plugin</artifactId>
-				<version>0.10.2</version>
 			</plugin>
 		</plugins>
 	</build>
+
 </project>
