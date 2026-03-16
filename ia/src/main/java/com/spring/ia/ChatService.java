@@ -21,7 +21,7 @@ public class ChatService {
         }
         
         Map<String, Object> body = new HashMap<>();
-        body.put("model", "llama3-13b-2048");
+        body.put("model", "llama-3.3-70b-versatile");
 
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of(
