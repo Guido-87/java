@@ -16,13 +16,12 @@ public class ChatService {
 
     public String consulta(String mensaje) {
         String apiKey = System.getenv("API_KEY");
-        System.out.println(System.getenv("API_KEY"));
         if (apiKey == null || apiKey.isEmpty()) {
             throw new RuntimeException("API_KEY no definida en variables de entorno");
         }
         
         Map<String, Object> body = new HashMap<>();
-        body.put("model", "llama3-70b-8192");
+        body.put("model", "llama3-13b-2048");
 
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of(
