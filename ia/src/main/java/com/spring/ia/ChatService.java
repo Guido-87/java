@@ -10,15 +10,17 @@ import java.util.*;
 @Service
 public class ChatService {
 
-    @Value("${groq.api.key}")
-    private String apiKey;
-
     private final RestClient restClient = RestClient.builder()
             .baseUrl("https://api.groq.com/openai/v1")
             .build();
 
     public String consulta(String mensaje) {
-
+        String apiKey = System.getenv("API_KEY");
+        System.out.println(System.getenv("API_KEY"));
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new RuntimeException("API_KEY no definida en variables de entorno");
+        }
+        
         Map<String, Object> body = new HashMap<>();
         body.put("model", "llama3-70b-8192");
 
