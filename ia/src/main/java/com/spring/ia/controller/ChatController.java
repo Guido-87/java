@@ -4,10 +4,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/chat")
-public class ChatGPTController {
+public class ChatController {
     private final ChatService chatService;
 
-    public ChatGPTController(ChatService chatService) {
+    public ChatController(ChatService chatService) {
         this.chatService = chatService;
     }
 

@@ -39,7 +39,6 @@ public class ChatService {
                 .retrieve()
                 .body(Map.class);
 
-        // evitar NullPointerException
         if (response == null) {
             throw new RuntimeException("Respuesta vacía de Groq");
         }
