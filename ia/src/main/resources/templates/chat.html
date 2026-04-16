@@ -1,23 +1,49 @@
-<script>
-if (!localStorage.getItem("userId")) {
-  localStorage.setItem("userId", crypto.randomUUID());
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat IA</title>
+</head>
+<body>
+    <h1>Chat con IA</h1>
+    <input id="input" type="text" placeholder="Escribe tu mensaje" />
+    <button onclick="send()">Enviar</button>
+    <div id="response"></div>
 
-async function send() {
-  const prompt = document.getElementById("input").value;
-  const userId = localStorage.getItem("userId");
+    <script>
+        if (!localStorage.getItem("userId")) {
+            localStorage.setItem("userId", crypto.randomUUID());
+        }
 
-  const response = await fetch("/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      consulta: prompt,
-      userId: userId
-    })
-  });
+        document.getElementById("input").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                send();
+            }
+        });
 
-  const data = await response.text();
-}
-</script>
+        async function send() {
+            const prompt = document.getElementById("input").value;
+            if (!prompt.trim()) return;
+            const userId = localStorage.getItem("userId");
+            document.getElementById("input").disabled = true;
+            document.querySelector("button").disabled = true;
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    userId: userId
+                })
+            });
+            const data = await response.text();
+            document.getElementById("response").innerHTML = data;
+            document.getElementById("input").value = "";
+            document.getElementById("input").disabled = false;
+            document.querySelector("button").disabled = false;
+            document.getElementById("input").focus();
+        }
+    </script>
+</body>
+</html>
