@@ -1,0 +1,23 @@
+<script>
+if (!localStorage.getItem("userId")) {
+  localStorage.setItem("userId", crypto.randomUUID());
+}
+
+async function send() {
+  const prompt = document.getElementById("input").value;
+  const userId = localStorage.getItem("userId");
+
+  const response = await fetch("/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      consulta: prompt,
+      userId: userId
+    })
+  });
+
+  const data = await response.text();
+}
+</script>

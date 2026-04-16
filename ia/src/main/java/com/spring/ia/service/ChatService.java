@@ -1,61 +1,120 @@
-package com.spring.ia;
+package com.spring.ia.service;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
-import java.util.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
 public class ChatService {
 
-    private final RestClient restClient = RestClient.builder()
-            .baseUrl("https://api.groq.com/openai/v1")
-            .build();
+    private static final int MAX_MENSAJES = 10;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final WebClient webClient;
+    private final RedisService redisService;
 
-    public String consulta(String mensaje) {
-        String apiKey = System.getenv("API_KEY");
-        if (apiKey == null || apiKey.isEmpty()) {
-            throw new RuntimeException("API_KEY no definida en variables de entorno");
-        }
-        
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", "llama-3.3-70b-versatile");
+    public ChatService(WebClient.Builder builder, @Value("${groq.api.base-url:https://api.groq.com/openai}") String baseUrl,
+                       @Value("${groq.api.key:}") String apiKey,
+                       RedisService redisService) {
+        this.webClient = builder
+                .baseUrl(baseUrl)
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .build();
+        this.redisService = redisService;
+    }
 
-        List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(Map.of(
-                "role", "user",
-                "content", mensaje
-        ));
+    public String chat(String userId, String prompt) {
+        // 1. Traer conversación desde Redis
+        List<Map<String, String>> mensajes = redisService.obtenerConversacion(userId);
 
-        body.put("messages", messages);
+        // 2. Agregar mensaje del usuario
+        mensajes.add(Map.of("role", "user", "content", prompt));
 
-        Map response = restClient.post()
-                .uri("/chat/completions")
-                .header("Authorization", "Bearer " + apiKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body)
+        // 3. Preparar mensajes (resumen + límite)
+        mensajes = prepararMensajes(mensajes);
+
+        // 4. Llamar IA
+        String respuesta = llamarIA(mensajes, prompt);
+
+        // 5. Guardar respuesta
+        mensajes.add(Map.of("role", "assistant", "content", respuesta));
+
+        // 6. Guardar en Redis
+        redisService.guardarConversacion(userId, mensajes);
+        return respuesta;
+    }
+
+    private String llamarIA(List<Map<String, String>> mensajes, String prompt) {
+        String model = elegirModelo(prompt);
+        String response = webClient.post()
+                .uri("/v1/chat/completions")
+                .bodyValue(Map.of(
+                        "model", model,
+                        "messages", mensajes
+                ))
                 .retrieve()
-                .body(Map.class);
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(10))
+                .retry(2)
+                .block();
+        try {
+            JsonNode root = mapper.readTree(response);
+            return root
+                    .path("choices")
+                    .get(0)
+                    .path("message")
+                    .path("content")
+                    .asText();
+        } catch (Exception e) {
+            throw new RuntimeException("Error llamando a IA", e);
+        }
+    }
 
-        if (response == null) {
-            throw new RuntimeException("Respuesta vacía de Groq");
+    private String elegirModelo(String prompt) {
+        if (prompt.length() < 50) {
+            return "llama-3.3-8b-instant";
+        }
+        return "llama-3.3-70b-versatile";
+    }
+
+    private List<Map<String, String>> prepararMensajes(List<Map<String, String>> mensajes) {
+        if (mensajes.size() <= MAX_MENSAJES) {
+            return mensajes;
         }
 
-        List choices = (List) response.get("choices");
+        // 1. Generar resumen con IA
+        String resumen = generarResumenIA(mensajes);
 
-        if (choices == null || choices.isEmpty()) {
-            throw new RuntimeException("Groq no devolvió respuestas");
-        }
+        // 2. Tomar últimos N mensajes
+        List<Map<String, String>> ultimos = mensajes.subList(
+            mensajes.size() - MAX_MENSAJES,
+            mensajes.size()
+        );
+        List<Map<String, String>> nuevos = new ArrayList<>(ultimos);
 
-        Map first = (Map) choices.get(0);
-        Map message = (Map) first.get("message");
+        // 3. Insertar resumen como system
+        Map<String, String> resumenMsg = Map.of(
+            "role", "system",
+            "content", resumen
+        );
+        nuevos.add(0, resumenMsg);
+        return nuevos;
+    }
 
-        if (message == null) {
-            throw new RuntimeException("Respuesta inválida de Groq");
-        }
-
-        return (String) message.get("content");
+    private String generarResumenIA(List<Map<String, String>> mensajes) {
+        String textoPlano = mensajes.stream()
+            .map(m -> m.get("role") + ": " + m.get("content"))
+            .reduce("", (a, b) -> a + "\n" + b);
+        String prompt = "Resumí esta conversación en pocas líneas:\n" + textoPlano;
+        return llamarIA(
+            List.of(Map.of("role", "user", "content", prompt)),
+            prompt
+        );
     }
 }
