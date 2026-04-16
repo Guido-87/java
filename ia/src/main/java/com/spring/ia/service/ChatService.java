@@ -77,10 +77,17 @@ public class ChatService {
     }
 
     private String elegirModelo(String prompt) {
-        if (prompt.length() < 50) {
-            return "llama-3.1-8b-instant";
+        prompt = prompt.toLowerCase();
+        if (prompt.length() > 500) return "llama-3.3-70b-versatile";
+        if (prompt.contains("explica") ||
+            prompt.contains("analiza") ||
+            prompt.contains("por que") ||
+            prompt.contains("arquitectura") ||
+            prompt.contains("optimizar")) {
+            return "llama-3.3-70b-versatile";
         }
-        return "llama-3.3-70b-versatile";
+
+        return "llama-3.1-8b-instant";
     }
 
     private List<Map<String, String>> prepararMensajes(List<Map<String, String>> mensajes) {
