@@ -1,31 +1,27 @@
 package com.spring.ia.service;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.spring.ia.client.GroqClient;
 
+/**
+ * Servicio de chat que orquesta la conversación.
+ * Responsabilidades:
+ * - Gestión de estado de conversación (Redis)
+ * - Lógica de negocio (selección de modelo, resumen, etc)
+ * - Manejo de usuarios
+ */
 @Service
 public class ChatService {
 
     private static final int MAX_MENSAJES = 10;
-    private final ObjectMapper mapper = new ObjectMapper();
-    private final WebClient webClient;
+    private final GroqClient groqClient;
     private final RedisService redisService;
 
-    public ChatService(WebClient.Builder builder, @Value("${groq.api.base-url:https://api.groq.com/openai}") String baseUrl,
-                       @Value("${groq.api.key:}") String apiKey,
-                       RedisService redisService) {
-        this.webClient = builder
-                .baseUrl(baseUrl)
-                .defaultHeader("Authorization", "Bearer " + apiKey)
-                .build();
+    public ChatService(GroqClient groqClient, RedisService redisService) {
+        this.groqClient = groqClient;
         this.redisService = redisService;
     }
 
@@ -52,28 +48,7 @@ public class ChatService {
 
     private String llamarIA(List<Map<String, String>> mensajes, String prompt) {
         String model = elegirModelo(prompt);
-        String response = webClient.post()
-                .uri("/v1/chat/completions")
-                .bodyValue(Map.of(
-                        "model", model,
-                        "messages", mensajes
-                ))
-                .retrieve()
-                .bodyToMono(String.class)
-                .timeout(Duration.ofSeconds(10))
-                .retry(2)
-                .block();
-        try {
-            JsonNode root = mapper.readTree(response);
-            return root
-                    .path("choices")
-                    .get(0)
-                    .path("message")
-                    .path("content")
-                    .asText();
-        } catch (Exception e) {
-            throw new RuntimeException("Error llamando a IA", e);
-        }
+        return groqClient.completeChat(mensajes, model);
     }
 
     private String elegirModelo(String prompt) {
