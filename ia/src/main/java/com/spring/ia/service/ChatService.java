@@ -78,7 +78,7 @@ public class ChatService {
 
     private String elegirModelo(String prompt) {
         if (prompt.length() < 50) {
-            return "llama-3.3-8b-instant";
+            return "llama-3.1-8b-instant";
         }
         return "llama-3.3-70b-versatile";
     }
