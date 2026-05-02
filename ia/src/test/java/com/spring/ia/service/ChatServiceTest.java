@@ -1,4 +1,4 @@
-package test.java.com.spring.ia.service;
+package com.spring.ia.service;
 
 import com.spring.ia.client.GroqClient;
 import com.spring.ia.service.ChatService;
@@ -303,5 +303,18 @@ class ChatServiceTest {
         assertTrue(saved.stream().anyMatch(m -> 
             complexPrompt.equals(m.get("content"))
         ));
+    }
+    
+    @Test
+    void shouldCallIAWhenCacheEmpty() {
+        when(redisService.obtenerConversacion(anyString()))
+                .thenReturn(new ArrayList<>());
+
+        when(groqClient.completeChat(anyList(), anyString()))
+                .thenReturn("respuesta");
+
+        chatService.chat("user", "hola");
+
+        verify(groqClient, times(1)).completeChat(anyList(), anyString());
     }
 }

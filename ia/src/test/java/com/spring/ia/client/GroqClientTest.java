@@ -1,4 +1,4 @@
-package test.java.com.spring.ia.client;
+package com.spring.ia.client;
 
 import com.spring.ia.client.GroqClient;
 import org.junit.jupiter.api.BeforeEach;

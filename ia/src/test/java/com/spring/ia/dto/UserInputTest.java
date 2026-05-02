@@ -1,4 +1,4 @@
-package test.java.com.spring.ia.dto;
+package com.spring.ia.dto;
 
 import org.junit.jupiter.api.Test;
 

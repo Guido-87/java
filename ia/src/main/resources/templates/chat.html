@@ -5,17 +5,20 @@
     <title>Chat IA</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <!-- Fuente estilo ChatGPT -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            background: #0f172a;
-            color: white;
+            background: #0d1117;
+            color: #e6edf3;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -24,123 +27,145 @@
 
         .chat-container {
             width: 100%;
-            max-width: 600px;
-            height: 90vh;
-            background: #1e293b;
-            border-radius: 12px;
+            max-width: 50rem;
+            height: 95vh;
+            background: #161b22;
+            border-radius: 1rem;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            border: 0.0625rem solid #30363d;
         }
 
         .header {
-            padding: 15px;
-            background: #020617;
+            padding: 1rem;
+            background: #010409;
             text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
+            font-size: 1rem;
+            font-weight: 500;
+            border-bottom: 0.0625rem solid #30363d;
         }
 
         .messages {
             flex: 1;
-            padding: 15px;
+            padding: 1.25rem;
             overflow-y: auto;
         }
 
         .message {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 80%;
-            word-wrap: break-word;
+            margin-bottom: 0.875rem;
+            padding: 0.75rem 0.875rem;
+            border-radius: 0.625rem;
+            max-width: 75%;
+            line-height: 1.4;
+            animation: fadeIn 0.2s ease;
         }
 
         .user {
-            background: #2563eb;
+            background: #238636;
             align-self: flex-end;
         }
 
         .bot {
-            background: #334155;
+            background: #21262d;
             align-self: flex-start;
         }
 
         .input-area {
             display: flex;
-            padding: 10px;
-            background: #020617;
+            padding: 0.75rem;
+            background: #010409;
+            border-top: 0.0625rem solid #30363d;
         }
 
         input {
             flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
+            padding: 0.75rem;
+            border-radius: 0.625rem;
+            border: 0.0625rem solid #30363d;
+            background: #0d1117;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        input:focus {
             outline: none;
-            font-size: 1rem;
+            border-color: #238636;
         }
 
         button {
-            margin-left: 10px;
-            padding: 10px 15px;
+            margin-left: 0.625rem;
+            padding: 0.625rem 1rem;
             border: none;
-            border-radius: 8px;
-            background: #22c55e;
+            border-radius: 0.625rem;
+            background: #238636;
             color: white;
-            font-weight: bold;
+            font-weight: 500;
             cursor: pointer;
         }
 
-        button:disabled {
-            background: gray;
-            cursor: not-allowed;
+        button:hover {
+            background: #2ea043;
         }
 
-        /* 📱 Responsive */
-        @media (max-width: 600px) {
-            .chat-container {
-                height: 100vh;
-                border-radius: 0;
-            }
+        button:disabled {
+            background: #555;
+        }
 
-            .header {
-                font-size: 1rem;
-                padding: 10px;
-            }
+        .spinner {
+            border: 0.1875rem solid #30363d;
+            border-top: 0.1875rem solid #238636;
+            border-radius: 50%;
+            width: 1.125rem;
+            height: 1.125rem;
+            animation: spin 0.8s linear infinite;
+            margin: 0.3125rem;
+        }
 
-            input {
-                font-size: 0.9rem;
-            }
+        .spinner-dots {
+            margin-left: 0.3125rem;
+            opacity: 0.8;
+        }
 
-            button {
-                padding: 8px 12px;
-            }
+        button:disabled {
+            background: #30363d;
+            cursor: not-allowed;
+            opacity: 0.6;
         }
     </style>
 </head>
 <body>
 
 <div class="chat-container">
-    <div class="header">Chat con IA</div>
-
+    <div class="header">Chat IA</div>
     <div id="messages" class="messages"></div>
 
     <div class="input-area">
         <input id="input" type="text" placeholder="Escribe tu mensaje..." />
-        <button onclick="send()">Enviar</button>
+        <button id="sendBtn" onclick="send()" disabled>Enviar</button>
     </div>
 </div>
 
 <script>
+    const input = document.getElementById("input");
+    const button = document.getElementById("sendBtn");
+
+    input.addEventListener("input", function() {
+        button.disabled = !input.value.trim();
+    });
+
+    input.addEventListener("keydown", function(event) {
+        if (event.key === "Enter" && input.value.trim() && !button.disabled) {
+            send();
+        }
+    });
+
     if (!localStorage.getItem("userId")) {
         localStorage.setItem("userId", crypto.randomUUID());
     }
 
     document.getElementById("input").addEventListener("keydown", function(event) {
-        if (event.key === "Enter") {
-            send();
-        }
+        if (event.key === "Enter") send();
     });
 
     function addMessage(text, type) {
@@ -160,28 +185,27 @@
         const userId = localStorage.getItem("userId");
 
         addMessage(prompt, "user");
+        const loadingMsg = document.createElement("div");
+        loadingMsg.className = "message bot";
+        loadingMsg.innerHTML = '<div class="spinner"></div> Pensando<span class="spinner-dots"></span>';
+        document.getElementById("messages").appendChild(loadingMsg);
 
         input.value = "";
         input.disabled = true;
-        document.querySelector("button").disabled = true;
+        button.disabled = true;
 
         const response = await fetch("/chat", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                prompt: prompt,
-                userId: userId
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, userId })
         });
 
         const data = await response.text();
-
+        loadingMsg.remove();
         addMessage(data, "bot");
 
         input.disabled = false;
-        document.querySelector("button").disabled = false;
+        button.disabled = !input.value.trim();
         input.focus();
     }
 </script>

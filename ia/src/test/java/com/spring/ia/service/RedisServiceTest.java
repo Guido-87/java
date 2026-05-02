@@ -1,4 +1,4 @@
-package test.java.com.spring.ia.service;
+package com.spring.ia.service;
 
 import com.spring.ia.service.RedisService;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,7 +1,6 @@
-package test.java.com.spring.ia.controller;
+package com.spring.ia.controller;
 
 import com.spring.ia.service.ChatService;
-import com.spring.ia.IaApplication;
 import com.spring.ia.controller.ChatController;
 
 import org.junit.jupiter.api.Test;
@@ -16,8 +15,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = ChatController.class)
-@ContextConfiguration(classes = IaApplication.class)
+@WebMvcTest(ChatController.class)
 class ChatControllerTest {
 
     @Autowired
@@ -39,7 +37,7 @@ class ChatControllerTest {
 
         mockMvc.perform(get("/chat").param("entrada", "Hello"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("<p>Test response</p>"));
+                .andExpect(content().string("Test response"));
     }
 
     @Test
@@ -50,6 +48,6 @@ class ChatControllerTest {
                 .contentType("application/json")
                 .content("{\"prompt\":\"What is AI?\",\"userId\":\"user123\"}"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("<p>AI response</p>"));
+                .andExpect(content().string("AI response"));
     }
 }

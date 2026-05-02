@@ -24,12 +24,12 @@ public class ChatController {
     @GetMapping
     @ResponseBody
     public String chatTest(@RequestParam String entrada) {
-        return "<p>" + chatService.chat("test-user", entrada) + "</p>";
+        return chatService.chat("test-user", entrada);
     }
 
     @PostMapping
     @ResponseBody
     public String chat(@RequestBody UserInput input) {
-        return "<p>" + chatService.chat(input.userId(), input.prompt()) + "</p>";
+        return chatService.chat(input.userId(), input.prompt());
     }
 }
