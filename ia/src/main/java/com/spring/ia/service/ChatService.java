@@ -3,6 +3,7 @@ package com.spring.ia.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,10 @@ public class ChatService {
         List<Map<String, String>> mensajes = redisService.obtenerConversacion(userId);
 
         // 2. Agregar mensaje del usuario
-        mensajes.add(Map.of("role", "user", "content", prompt));
+        Map<String, String> userMsg = new HashMap<>();
+        userMsg.put("role", "user");
+        userMsg.put("content", prompt);
+        mensajes.add(userMsg);
 
         // 3. Preparar mensajes (resumen + límite)
         mensajes = prepararMensajes(mensajes);
@@ -43,7 +47,11 @@ public class ChatService {
         String respuesta = llamarIA(mensajes, prompt);
 
         // 5. Guardar respuesta
-        mensajes.add(Map.of("role", "assistant", "content", respuesta));
+        String safeRespuesta = respuesta != null ? respuesta : "";
+        Map<String, String> assistantMsg = new HashMap<>();
+        assistantMsg.put("role", "assistant");
+        assistantMsg.put("content", safeRespuesta);
+        mensajes.add(assistantMsg);
 
         // 6. Guardar en Redis
         try {
@@ -51,7 +59,7 @@ public class ChatService {
         } catch (Exception e) {
             log.error("Error guardando en Redis", e);
         }
-        return respuesta;
+        return safeRespuesta;
     }
 
     private String llamarIA(List<Map<String, String>> mensajes, String prompt) {
@@ -89,10 +97,9 @@ public class ChatService {
         List<Map<String, String>> nuevos = new ArrayList<>(ultimos);
 
         // 3. Insertar resumen como system
-        Map<String, String> resumenMsg = Map.of(
-            "role", "system",
-            "content", resumen
-        );
+        Map<String, String> resumenMsg = new HashMap<>();
+        resumenMsg.put("role", "system");
+        resumenMsg.put("content", resumen != null ? resumen : "");
         nuevos.add(0, resumenMsg);
         return nuevos;
     }
@@ -102,9 +109,9 @@ public class ChatService {
             .map(m -> m.get("role") + ": " + m.get("content"))
             .reduce("", (a, b) -> a + "\n" + b);
         String prompt = "Resumí esta conversación en pocas líneas:\n" + textoPlano;
-        return llamarIA(
-            List.of(Map.of("role", "user", "content", prompt)),
-            prompt
-        );
+        Map<String, String> msg = new HashMap<>();
+        msg.put("role", "user");
+        msg.put("content", prompt);
+        return llamarIA(List.of(msg), prompt);
     }
 }

@@ -3,10 +3,13 @@ package com.spring.ia.exception;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
 import java.util.Map;
+import java.util.HashMap;
 
 @RestControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler {
@@ -19,6 +22,17 @@ public class GlobalExceptionHandler {
                         "error", "Servicio no disponible",
                         "message", "El sistema está teniendo problemas temporales"
                 ));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
+        return ResponseEntity
+                .status(400)
+                .body(errors);
     }
 
     @ExceptionHandler(Exception.class)

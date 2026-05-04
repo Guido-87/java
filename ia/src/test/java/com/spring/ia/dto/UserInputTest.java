@@ -10,29 +10,22 @@ class UserInputTest {
 
     @Test
     void testUserInputCreation() {
-        UserInput input = new UserInput("Hello", "user123");
-        assertEquals("Hello", input.prompt());
+        UserInput input = new UserInput("user123", "Hello");
         assertEquals("user123", input.userId());
+        assertEquals("Hello", input.prompt());
     }
 
     @Test
     void testUserInputWithNullPrompt() {
-        UserInput input = new UserInput(null, "user123");
-        assertNull(input.prompt());
+        UserInput input = new UserInput("user123", null);
         assertEquals("user123", input.userId());
+        assertNull(input.prompt());
     }
 
     @Test
     void testUserInputWithNullUserId() {
-        UserInput input = new UserInput("Hello", null);
-        assertEquals("Hello", input.prompt());
+        UserInput input = new UserInput(null, "Hello");
         assertNull(input.userId());
-    }
-
-    @Test
-    void testUserInputWithEmptyStrings() {
-        UserInput input = new UserInput("", "");
-        assertEquals("", input.prompt());
-        assertEquals("", input.userId());
+        assertEquals("Hello", input.prompt());
     }
 }

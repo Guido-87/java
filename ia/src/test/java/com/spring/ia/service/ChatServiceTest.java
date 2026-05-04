@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,12 +37,8 @@ class ChatServiceTest {
     @Captor
     private ArgumentCaptor<String> modelCaptor;
 
+    @InjectMocks
     private ChatService chatService;
-
-    @BeforeEach
-    void setUp() {
-        chatService = new ChatService(groqClient, redisService);
-    }
 
     @Test
     @DisplayName("Debería inicializar correctamente")
@@ -316,5 +313,24 @@ class ChatServiceTest {
         chatService.chat("user", "hola");
 
         verify(groqClient, times(1)).completeChat(anyList(), anyString());
+    }
+
+    @Test
+    void deberiaResponderAlgo() {
+        when(redisService.obtenerConversacion(any()))
+                .thenReturn(new ArrayList<>());
+
+        when(groqClient.completeChat(any(), any()))
+                .thenReturn("respuesta mock");
+
+        String res = chatService.chat("user", "hola");
+
+        assertNotNull(res);
+    }
+
+    @Test
+    void deberiaManejarPromptVacio() {
+        String res = chatService.chat("user", "");
+        assertNotNull(res);
     }
 }

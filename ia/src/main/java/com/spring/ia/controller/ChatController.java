@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.spring.ia.dto.UserInput;
 import com.spring.ia.service.ChatService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -16,7 +17,7 @@ public class ChatController {
     }
 
     @PostMapping
-    public String chat(@RequestBody UserInput input) {
+    public String chat(@Valid @RequestBody UserInput input) {
         return chatService.chat(input.userId(), input.prompt());
     }
 }

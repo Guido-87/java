@@ -1,4 +1,10 @@
 package com.spring.ia.dto;
 
-public record UserInput(String prompt, String userId) {
-}
+import jakarta.validation.constraints.NotBlank;
+
+public record UserInput(
+    @NotBlank(message = "userId no puede ser vacío")
+    String userId,
+    @NotBlank(message = "prompt no puede ser vacío")
+    String prompt
+) {}
