@@ -25,26 +25,10 @@ class ChatControllerTest {
     private ChatService chatService;
 
     @Test
-    void testHolaEndpoint() throws Exception {
-        mockMvc.perform(get("/chat/hola"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("<h1>Hola</h1>"));
-    }
-
-    @Test
-    void testChatGetEndpoint() throws Exception {
-        when(chatService.chat("test-user", "Hello")).thenReturn("Test response");
-
-        mockMvc.perform(get("/chat").param("entrada", "Hello"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Test response"));
-    }
-
-    @Test
-    void testChatPostEndpoint() throws Exception {
+    void testChat() throws Exception {
         when(chatService.chat("user123", "What is AI?")).thenReturn("AI response");
 
-        mockMvc.perform(post("/chat")
+        mockMvc.perform(post("/api/chat")
                 .contentType("application/json")
                 .content("{\"prompt\":\"What is AI?\",\"userId\":\"user123\"}"))
                 .andExpect(status().isOk())

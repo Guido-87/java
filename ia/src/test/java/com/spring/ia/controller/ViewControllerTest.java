@@ -27,7 +27,7 @@ class ViewControllerTest {
 
     @Test
     void testChatUiEndpointMapping() throws Exception {
-        mockMvc.perform(get("/chat-ui"))
+        mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("chat"));
     }

@@ -4,10 +4,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-@RestControllerAdvice
+@RestControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RedisConnectionFailureException.class)
