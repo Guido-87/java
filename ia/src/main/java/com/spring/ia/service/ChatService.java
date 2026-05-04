@@ -3,6 +3,9 @@ package com.spring.ia.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.spring.ia.client.GroqClient;
 
@@ -17,6 +20,7 @@ import com.spring.ia.client.GroqClient;
 public class ChatService {
 
     private static final int MAX_MENSAJES = 10;
+    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
     private final GroqClient groqClient;
     private final RedisService redisService;
 
@@ -42,7 +46,11 @@ public class ChatService {
         mensajes.add(Map.of("role", "assistant", "content", respuesta));
 
         // 6. Guardar en Redis
-        redisService.guardarConversacion(userId, mensajes);
+        try {
+            redisService.guardarConversacion(userId, mensajes);
+        } catch (Exception e) {
+            log.error("Error guardando en Redis", e);
+        }
         return respuesta;
     }
 

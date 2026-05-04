@@ -194,15 +194,22 @@
         input.disabled = true;
         button.disabled = true;
 
-        const response = await fetch("/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt, userId })
-        });
+        try {
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt, userId })
+            });
 
-        const data = await response.text();
-        loadingMsg.remove();
-        addMessage(data, "bot");
+            const data = await response.text();
+
+            loadingMsg.remove();
+            addMessage(data, "bot");
+
+        } catch (error) {
+            loadingMsg.remove();
+            addMessage("⚠️ El servidor no responde, intentá de nuevo", "bot");
+        }
 
         input.disabled = false;
         button.disabled = !input.value.trim();
