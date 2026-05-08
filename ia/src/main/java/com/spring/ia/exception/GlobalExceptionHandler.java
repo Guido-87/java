@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
                 .status(500)
                 .body(Map.of(
                         "error", "Error interno",
-                        "message", "Algo salió mal, intentá de nuevo más tarde"
+                        "message", "Algo salió mal, intentá de nuevo más tarde."
                 ));
     }
 }

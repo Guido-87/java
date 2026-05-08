@@ -2,12 +2,15 @@ package com.spring.ia.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spring.ia.exception.GroqClientException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,17 +58,23 @@ public class GroqClient {
      */
     private String callGroqApi(List<Map<String, String>> mensajes, String model) {
         try {
-            return webClient.post()
+            Map<String, Object> body = new HashMap<>();
+            body.put("model", model);
+            body.put("messages", mensajes);
+            log.info("Llamando a Groq con modelo: {}", model);
+            String response = webClient.post()
                     .uri("/v1/chat/completions")
-                    .bodyValue(Map.of(
-                            "model", model,
-                            "messages", mensajes
-                    ))
+                    .bodyValue(body)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                     .retry(MAX_RETRIES)
                     .block();
+            log.info("Response final: {}", response);
+            if (response == null) {
+                throw new GroqClientException("Respuesta vacía de Groq");
+            }
+            return response;
         } catch (Exception e) {
             log.error("Error llamando a Groq API", e);
             throw new GroqClientException("Error comunicándose con Groq: " + e.getMessage(), e);
@@ -87,19 +96,6 @@ public class GroqClient {
         } catch (Exception e) {
             log.error("Error parseando respuesta de Groq", e);
             throw new GroqClientException("Error parseando respuesta: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Excepción personalizada para errores de Groq.
-     */
-    public static class GroqClientException extends RuntimeException {
-        public GroqClientException(String message) {
-            super(message);
-        }
-
-        public GroqClientException(String message, Throwable cause) {
-            super(message, cause);
         }
     }
 }

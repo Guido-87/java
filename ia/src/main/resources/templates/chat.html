@@ -201,21 +201,26 @@
                 body: JSON.stringify({ prompt, userId })
             });
 
-            const data = await response.text();
+            const data = await response.json();
 
             loadingMsg.remove();
-            addMessage(data, "bot");
+            
+            if (!response.ok) {
+                addMessage("⚠️ " + data.message, "bot");
+                return;
+            }
+
+            addMessage(data.response, "bot");
 
         } catch (error) {
             loadingMsg.remove();
             addMessage("⚠️ El servidor no responde, intentá de nuevo", "bot");
+        } finally {
+            input.disabled = false;
+            button.disabled = !input.value.trim();
+            input.focus();
         }
-
-        input.disabled = false;
-        button.disabled = !input.value.trim();
-        input.focus();
     }
 </script>
-
 </body>
 </html>

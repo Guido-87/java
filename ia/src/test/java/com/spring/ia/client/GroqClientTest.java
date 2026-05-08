@@ -1,6 +1,7 @@
 package com.spring.ia.client;
 
-import com.spring.ia.client.GroqClient;
+import com.spring.ia.exception.GroqClientException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -146,7 +147,7 @@ class GroqClientTest {
         setupWebClientMocksFail("{\"error\": \"Invalid response\"}");
 
         // Act & Assert
-        assertThrows(GroqClient.GroqClientException.class, () ->
+        assertThrows(GroqClientException.class, () ->
                 groqClient.completeChat(messages, "test-model")
         );
     }
@@ -161,8 +162,8 @@ class GroqClientTest {
         setupWebClientMocks("{ invalid json }");
 
         // Act & Assert
-        GroqClient.GroqClientException exception = assertThrows(
-                GroqClient.GroqClientException.class,
+        GroqClientException exception = assertThrows(
+                GroqClientException.class,
                 () -> groqClient.completeChat(messages, "test-model")
         );
         assertTrue(exception.getMessage().contains("parseando"));
@@ -182,7 +183,7 @@ class GroqClientTest {
         groqClient = new GroqClient(builder, "https://api.groq.com/openai", "test-key");
 
         // Act & Assert
-        assertThrows(GroqClient.GroqClientException.class, () ->
+        assertThrows(GroqClientException.class, () ->
                 groqClient.completeChat(
                         List.of(Map.of("role", "user", "content", "Test")),
                         "test-model"

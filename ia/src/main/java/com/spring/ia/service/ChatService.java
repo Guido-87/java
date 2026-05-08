@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.spring.ia.client.GroqClient;
+import com.spring.ia.util.LanguageDetector;
 
 /**
  * Servicio de chat que orquesta la conversación.
@@ -31,6 +32,8 @@ public class ChatService {
     }
 
     public String chat(String userId, String prompt) {
+        log.info("Prompt recibido: {}", prompt);
+
         // 1. Traer conversación desde Redis
         List<Map<String, String>> mensajes = redisService.obtenerConversacion(userId);
 
@@ -63,12 +66,31 @@ public class ChatService {
     }
 
     private String llamarIA(List<Map<String, String>> mensajes, String prompt) {
+        log.info("Entrando a llamarIA");
+        String systemPrompt = construirSystemPrompt(prompt);
+        log.info("System prompt generado");
+        List<Map<String, String>> mensajesConSistema = new ArrayList<>();
+        Map<String, String> systemMsg = new HashMap<>();
+        systemMsg.put("role", "system");
+        systemMsg.put("content", systemPrompt);
+        mensajesConSistema.add(systemMsg);
+        mensajesConSistema.addAll(mensajes);
+        log.info("Mensajes preparados");
         String model = elegirModelo(prompt);
-        return groqClient.completeChat(mensajes, model);
+        log.info("Modelo seleccionado: {}", model);
+        try {
+            return groqClient.completeChat(mensajesConSistema, model);
+        } catch (Exception e) {
+            log.warn("Fallback al modelo 8B", e);
+            return groqClient.completeChat(
+                    mensajesConSistema,
+                    "llama-3.1-8b-instant"
+            );
+        }
     }
 
     private String elegirModelo(String prompt) {
-        prompt = prompt.toLowerCase();
+        prompt = prompt != null ? prompt.toLowerCase() : "";
         if (prompt.length() > 500) return "llama-3.3-70b-versatile";
         if (prompt.contains("explica") ||
             prompt.contains("analiza") ||
@@ -113,5 +135,32 @@ public class ChatService {
         msg.put("role", "user");
         msg.put("content", prompt);
         return llamarIA(List.of(msg), prompt);
+    }
+
+    private String construirSystemPrompt(String prompt) {
+        prompt = prompt != null ? prompt.toLowerCase() : "";
+        String idioma = LanguageDetector.detect(prompt);
+        String base = idioma.equals("en")
+                ? "You are a helpful AI assistant. Reply in English."
+                : "Sos un asistente útil. Respondé en español.";
+        if (prompt.contains("java") ||
+            prompt.contains("spring") ||
+            prompt.contains("codigo")) {
+            return base + """
+                    Sos un desarrollador senior experto en:
+                    - Java
+                    - Spring Boot
+                    - APIs REST
+                    - Redis
+                    Explicá de forma clara y profesional.
+                    """;
+        }
+
+        if (prompt.contains("resume")) {
+            return base + """
+                    Generá respuestas breves y resumidas.
+                    """;
+        }
+        return base;
     }
 }
