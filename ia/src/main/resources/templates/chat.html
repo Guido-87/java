@@ -4,223 +4,59 @@
     <meta charset="UTF-8">
     <title>Chat IA</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <!-- Fuente estilo ChatGPT -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background: #0d1117;
-            color: #e6edf3;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .chat-container {
-            width: 100%;
-            max-width: 50rem;
-            height: 95vh;
-            background: #161b22;
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 0.0625rem solid #30363d;
-        }
-
-        .header {
-            padding: 1rem;
-            background: #010409;
-            text-align: center;
-            font-size: 1rem;
-            font-weight: 500;
-            border-bottom: 0.0625rem solid #30363d;
-        }
-
-        .messages {
-            flex: 1;
-            padding: 1.25rem;
-            overflow-y: auto;
-        }
-
-        .message {
-            margin-bottom: 0.875rem;
-            padding: 0.75rem 0.875rem;
-            border-radius: 0.625rem;
-            max-width: 75%;
-            line-height: 1.4;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .user {
-            background: #238636;
-            align-self: flex-end;
-        }
-
-        .bot {
-            background: #21262d;
-            align-self: flex-start;
-        }
-
-        .input-area {
-            display: flex;
-            padding: 0.75rem;
-            background: #010409;
-            border-top: 0.0625rem solid #30363d;
-        }
-
-        input {
-            flex: 1;
-            padding: 0.75rem;
-            border-radius: 0.625rem;
-            border: 0.0625rem solid #30363d;
-            background: #0d1117;
-            color: white;
-            font-size: 0.95rem;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #238636;
-        }
-
-        button {
-            margin-left: 0.625rem;
-            padding: 0.625rem 1rem;
-            border: none;
-            border-radius: 0.625rem;
-            background: #238636;
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #2ea043;
-        }
-
-        button:disabled {
-            background: #555;
-        }
-
-        .spinner {
-            border: 0.1875rem solid #30363d;
-            border-top: 0.1875rem solid #238636;
-            border-radius: 50%;
-            width: 1.125rem;
-            height: 1.125rem;
-            animation: spin 0.8s linear infinite;
-            margin: 0.3125rem;
-        }
-
-        .spinner-dots {
-            margin-left: 0.3125rem;
-            opacity: 0.8;
-        }
-
-        button:disabled {
-            background: #30363d;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-
 <div class="chat-container">
     <div class="header">Chat IA</div>
     <div id="messages" class="messages"></div>
-
     <div class="input-area">
         <input id="input" type="text" placeholder="Escribe tu mensaje..." />
-        <button id="sendBtn" onclick="send()" disabled>Enviar</button>
+        <button id="sendBtn" disabled>Enviar</button>
+    </div>
+    <div class="donation-box">
+        <div class="donation-alias">
+            ☕ Apoyar proyecto ☕
+        </div>
+        <strong class="donation-alias">Alias: Guido-87.mp</strong>
+        <a
+            href="https://mercadopago.com.ar"
+            target="_blank"
+            class="donation-link"
+        >
+            Ir a MercadoPago
+        </a>
     </div>
 </div>
-
-<script>
-    const input = document.getElementById("input");
-    const button = document.getElementById("sendBtn");
-
-    input.addEventListener("input", function() {
-        button.disabled = !input.value.trim();
-    });
-
-    input.addEventListener("keydown", function(event) {
-        if (event.key === "Enter" && input.value.trim() && !button.disabled) {
-            send();
-        }
-    });
-
-    if (!localStorage.getItem("userId")) {
-        localStorage.setItem("userId", crypto.randomUUID());
-    }
-
-    document.getElementById("input").addEventListener("keydown", function(event) {
-        if (event.key === "Enter") send();
-    });
-
-    function addMessage(text, type) {
-        const msg = document.createElement("div");
-        msg.className = "message " + type;
-        msg.innerText = text;
-        document.getElementById("messages").appendChild(msg);
-        document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    }
-
-    async function send() {
-        const input = document.getElementById("input");
-        const prompt = input.value;
-
-        if (!prompt.trim()) return;
-
-        const userId = localStorage.getItem("userId");
-
-        addMessage(prompt, "user");
-        const loadingMsg = document.createElement("div");
-        loadingMsg.className = "message bot";
-        loadingMsg.innerHTML = '<div class="spinner"></div> Pensando<span class="spinner-dots"></span>';
-        document.getElementById("messages").appendChild(loadingMsg);
-
-        input.value = "";
-        input.disabled = true;
-        button.disabled = true;
-
-        try {
-            const response = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt, userId })
-            });
-
-            const data = await response.json();
-
-            loadingMsg.remove();
-            
-            if (!response.ok) {
-                addMessage("⚠️ " + data.message, "bot");
-                return;
-            }
-
-            addMessage(data.response, "bot");
-
-        } catch (error) {
-            loadingMsg.remove();
-            addMessage("⚠️ El servidor no responde, intentá de nuevo", "bot");
-        } finally {
-            input.disabled = false;
-            button.disabled = !input.value.trim();
-            input.focus();
-        }
-    }
-</script>
+<script src="/js/chat.js" onerror="handleScriptError()"></script>
 </body>
 </html>
+<script>
+function handleScriptError() {
+    showError('❌ No se pudo cargar el chat. Revisá tu conexión o recargá la página.');
+    disableUI();
+}
+
+function showError(msg) {
+    const box = document.createElement('div');
+    box.style.position = 'fixed';
+    box.style.bottom = '10px';
+    box.style.left = '10px';
+    box.style.background = '#c62828';
+    box.style.color = 'white';
+    box.style.padding = '10px 14px';
+    box.style.borderRadius = '8px';
+    box.style.zIndex = '9999';
+    box.innerText = msg;
+    document.body.appendChild(box);
+}
+
+function disableUI() {
+    const input = document.querySelector('input');
+    const button = document.querySelector('button');
+    if (input) input.disabled = true;
+    if (button) button.disabled = true;
+}
+</script>

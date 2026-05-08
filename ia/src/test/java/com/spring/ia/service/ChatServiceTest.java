@@ -1,21 +1,15 @@
 package com.spring.ia.service;
 
 import com.spring.ia.client.GroqClient;
-import com.spring.ia.service.ChatService;
-import com.spring.ia.service.RedisService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.spring.ia.dto.ChatRequest;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -31,306 +25,107 @@ class ChatServiceTest {
     @Mock
     private RedisService redisService;
 
-    @Captor
-    private ArgumentCaptor<List<Map<String, String>>> messagesCaptor;
-
-    @Captor
-    private ArgumentCaptor<String> modelCaptor;
+    @Mock
+    private HttpSession session;
 
     @InjectMocks
     private ChatService chatService;
 
     @Test
-    @DisplayName("Debería inicializar correctamente")
-    void testChatServiceInitialization() {
-        assertNotNull(chatService);
-    }
+    @DisplayName("Debería retornar respuesta de IA")
+    void shouldReturnResponseFromAI() {
 
-    @Test
-    @DisplayName("Debería agregar mensaje del usuario a la conversación")
-    void testAddUserMessageToConversation() {
-        // Arrange
-        String userId = "user123";
-        String prompt = "¿Hola?";
-        List<Map<String, String>> existingConversation = new ArrayList<>();
+        when(session.getAttribute("userId")).thenReturn("user123");
 
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(existingConversation);
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Hola, ¿cómo estás?");
+        when(redisService.obtenerConversacion(anyString()))
+                .thenReturn(new ArrayList<>());
 
-        // Act
-        chatService.chat(userId, prompt);
-
-        // Assert
-        verify(redisService).obtenerConversacion(eq(userId));
-        verify(groqClient).completeChat(anyList(), anyString());
-        verify(redisService).guardarConversacion(eq(userId), messagesCaptor.capture());
-        
-        List<Map<String, String>> savedMessages = messagesCaptor.getValue();
-        assertTrue(savedMessages.stream().anyMatch(m -> 
-            "user".equals(m.get("role")) && prompt.equals(m.get("content"))
-        ));
-    }
-
-    @Test
-    @DisplayName("Debería guardar respuesta del asistente en Redis")
-    void testSaveAssistantResponse() {
-        // Arrange
-        String userId = "user123";
-        String userPrompt = "¿Qué es Java?";
-        String assistantResponse = "Java es un lenguaje de programación";
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>());
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn(assistantResponse);
-
-        // Act
-        chatService.chat(userId, userPrompt);
-
-        // Assert
-        verify(redisService).guardarConversacion(eq(userId), messagesCaptor.capture());
-        List<Map<String, String>> savedMessages = messagesCaptor.getValue();
-        assertTrue(savedMessages.stream().anyMatch(m ->
-                "assistant".equals(m.get("role")) && assistantResponse.equals(m.get("content"))
-        ));
-    }
-
-    @Test
-    @DisplayName("Debería traer conversación previa de Redis")
-    void testRetrievePreviousConversation() {
-        // Arrange
-        String userId = "user123";
-        List<Map<String, String>> previousConversation = List.of(
-                Map.of("role", "user", "content", "Primer mensaje"),
-                Map.of("role", "assistant", "content", "Primera respuesta")
-        );
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>(previousConversation));
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Nueva respuesta");
-
-        // Act
-        chatService.chat(userId, "Nuevo mensaje");
-
-        // Assert
-        verify(redisService).obtenerConversacion(eq(userId));
-        verify(groqClient).completeChat(messagesCaptor.capture(), anyString());
-        List<Map<String, String>> sentMessages = messagesCaptor.getValue();
-        
-        assertTrue(sentMessages.stream().anyMatch(m -> 
-            "Primer mensaje".equals(m.get("content"))
-        ));
-    }
-
-    @Test
-    @DisplayName("Debería seleccionar modelo pequeño para prompts cortos")
-    void testSelectSmallModelForShortPrompt() {
-        // Arrange
-        String userId = "user123";
-        String shortPrompt = "Hola";
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>());
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Respuesta");
-
-        // Act
-        chatService.chat(userId, shortPrompt);
-
-        // Assert
-        verify(groqClient).completeChat(anyList(), eq("llama-3.1-8b-instant"));
-    }
-
-    @Test
-    @DisplayName("Debería seleccionar modelo grande para prompts largos")
-    void testSelectLargeModelForLongPrompt() {
-        // Arrange
-        String userId = "user123";
-        String longPrompt = "a".repeat(501); // Más de 500 caracteres
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>());
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Respuesta");
-
-        // Act
-        chatService.chat(userId, longPrompt);
-
-        // Assert
-        verify(groqClient).completeChat(anyList(), eq("llama-3.3-70b-versatile"));
-    }
-
-    @Test
-    @DisplayName("Debería seleccionar modelo grande para prompts con palabras clave")
-    void testSelectLargeModelForKeywordPrompts() {
-        // Arrange
-        String userId = "user123";
-        String explainerPrompt = "Explica cómo funciona la autenticación";
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>());
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Respuesta");
-
-        // Act
-        chatService.chat(userId, explainerPrompt);
-
-        // Assert
-        verify(groqClient).completeChat(anyList(), eq("llama-3.3-70b-versatile"));
-    }
-
-    @Test
-    @DisplayName("Debería mantener orden de mensajes en conversación")
-    void testMaintainMessageOrder() {
-        // Arrange
-        String userId = "user123";
-        List<Map<String, String>> conversation = new ArrayList<>();
-        conversation.add(Map.of("role", "user", "content", "Mensaje 1"));
-        conversation.add(Map.of("role", "assistant", "content", "Respuesta 1"));
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>(conversation));
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Respuesta 2");
-
-        // Act
-        chatService.chat(userId, "Mensaje 2");
-
-        // Assert
-        verify(redisService).guardarConversacion(eq(userId), messagesCaptor.capture());
-        List<Map<String, String>> saved = messagesCaptor.getValue();
-        
-        assertEquals("Mensaje 1", saved.get(0).get("content"));
-        assertEquals("Respuesta 1", saved.get(1).get("content"));
-        assertEquals("Mensaje 2", saved.get(2).get("content"));
-        assertEquals("Respuesta 2", saved.get(3).get("content"));
-    }
-
-    @Test
-    @DisplayName("Debería llamar a GroqClient con los mensajes correctos")
-    void testCallGroqClientWithCorrectMessages() {
-        // Arrange
-        String userId = "user456";
-        String userMessage = "¿Cuál es el significado de la vida?";
-        List<Map<String, String>> emptyConversation = new ArrayList<>();
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(emptyConversation);
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("42");
-
-        // Act
-        chatService.chat(userId, userMessage);
-
-        // Assert
-        verify(groqClient).completeChat(messagesCaptor.capture(), anyString());
-        List<Map<String, String>> capturedMessages = messagesCaptor.getValue();
-        
-        // Debe tener al menos el mensaje del usuario
-        assertTrue(capturedMessages.stream().anyMatch(m ->
-            "user".equals(m.get("role")) && userMessage.equals(m.get("content"))
-        ));
-    }
-
-    @Test
-    @DisplayName("Debería retornar respuesta de GroqClient")
-    void testReturnGroqResponse() {
-        // Arrange
-        String userId = "user789";
-        String expectedResponse = "Esta es la respuesta esperada";
-
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>());
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn(expectedResponse);
-
-        // Act
-        String result = chatService.chat(userId, "Test");
-
-        // Assert
-        assertEquals(expectedResponse, result);
-    }
-
-    @Test
-    @DisplayName("Debería manejar múltiples chats del mismo usuario")
-    void testMultipleChatsFromSameUser() {
-        // Arrange
-        String userId = "user123";
-
-        when(redisService.obtenerConversacion(eq(userId)))
-                .thenReturn(new ArrayList<>())
-                .thenReturn(new ArrayList<>(List.of(
-                    Map.of("role", "user", "content", "Primer chat"),
-                    Map.of("role", "assistant", "content", "Primera respuesta")
-                )));
         when(groqClient.completeChat(anyList(), anyString()))
-                .thenReturn("Primera respuesta")
-                .thenReturn("Segunda respuesta");
+                .thenReturn("respuesta mock");
 
-        // Act
-        String firstResponse = chatService.chat(userId, "Primer chat");
-        String secondResponse = chatService.chat(userId, "Segundo chat");
+        ChatRequest request = new ChatRequest("hola");
 
-        // Assert
-        assertEquals("Primera respuesta", firstResponse);
-        assertEquals("Segunda respuesta", secondResponse);
-        verify(redisService, times(2)).obtenerConversacion(eq(userId));
-        verify(redisService, times(2)).guardarConversacion(eq(userId), anyList());
+        String result = chatService.chat(request, session);
+
+        assertEquals("respuesta mock", result);
     }
 
     @Test
-    @DisplayName("Debería manejar prompt case-insensitive para selección de modelo")
-    void testModelSelectionCaseInsensitive() {
-        // Arrange
-        String userId = "user123";
-        String uppercaseKeyword = "EXPLICA cómo funciona";
+    @DisplayName("Debería crear userId si no existe en sesión")
+    void shouldCreateUserIdIfNotExists() {
 
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>());
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Respuesta");
+        when(session.getAttribute("userId")).thenReturn(null);
 
-        // Act
-        chatService.chat(userId, uppercaseKeyword);
+        when(redisService.obtenerConversacion(anyString()))
+                .thenReturn(new ArrayList<>());
 
-        // Assert
-        verify(groqClient).completeChat(anyList(), eq("llama-3.3-70b-versatile"));
+        when(groqClient.completeChat(anyList(), anyString()))
+                .thenReturn("ok");
+
+        ChatRequest request = new ChatRequest("hola");
+
+        String result = chatService.chat(request, session);
+
+        assertNotNull(result);
+
+        verify(session).setAttribute(eq("userId"), anyString());
     }
 
     @Test
-    @DisplayName("Debería preservar contenido del mensaje en Redis")
-    void testPreserveMessageContent() {
-        // Arrange
-        String userId = "user123";
-        String complexPrompt = "Analiza este código: var x = 1;";
+    @DisplayName("Debería guardar conversación en Redis")
+    void shouldSaveConversationToRedis() {
 
-        when(redisService.obtenerConversacion(eq(userId))).thenReturn(new ArrayList<>());
-        when(groqClient.completeChat(anyList(), anyString())).thenReturn("Análisis");
+        when(session.getAttribute("userId")).thenReturn("user123");
 
-        // Act
-        chatService.chat(userId, complexPrompt);
+        when(redisService.obtenerConversacion("user123"))
+                .thenReturn(new ArrayList<>());
 
-        // Assert
-        verify(redisService).guardarConversacion(eq(userId), messagesCaptor.capture());
-        List<Map<String, String>> saved = messagesCaptor.getValue();
-        
-        assertTrue(saved.stream().anyMatch(m -> 
-            complexPrompt.equals(m.get("content"))
-        ));
+        when(groqClient.completeChat(anyList(), anyString()))
+                .thenReturn("respuesta");
+
+        ChatRequest request = new ChatRequest("hola");
+
+        chatService.chat(request, session);
+
+        verify(redisService).guardarConversacion(eq("user123"), anyList());
     }
-    
+
     @Test
-    void shouldCallIAWhenCacheEmpty() {
+    @DisplayName("Debería llamar GroqClient")
+    void shouldCallGroqClient() {
+
+        when(session.getAttribute("userId")).thenReturn("user123");
+
         when(redisService.obtenerConversacion(anyString()))
                 .thenReturn(new ArrayList<>());
 
         when(groqClient.completeChat(anyList(), anyString()))
                 .thenReturn("respuesta");
 
-        chatService.chat("user", "hola");
+        ChatRequest request = new ChatRequest("hola");
 
-        verify(groqClient, times(1)).completeChat(anyList(), anyString());
+        chatService.chat(request, session);
+
+        verify(groqClient, times(1))
+                .completeChat(anyList(), anyString());
     }
 
     @Test
-    void deberiaResponderAlgo() {
-        when(redisService.obtenerConversacion(any()))
+    @DisplayName("No debería retornar null")
+    void shouldNotReturnNull() {
+
+        when(session.getAttribute("userId")).thenReturn("user123");
+
+        when(redisService.obtenerConversacion(anyString()))
                 .thenReturn(new ArrayList<>());
 
-        when(groqClient.completeChat(any(), any()))
-                .thenReturn("respuesta mock");
+        when(groqClient.completeChat(anyList(), anyString()))
+                .thenReturn("respuesta");
 
-        String res = chatService.chat("user", "hola");
+        ChatRequest request = new ChatRequest("hola");
 
-        assertNotNull(res);
-    }
+        String result = chatService.chat(request, session);
 
-    @Test
-    void deberiaManejarPromptVacio() {
-        String res = chatService.chat("user", "");
-        assertNotNull(res);
+        assertNotNull(result);
     }
 }

@@ -1,0 +1,209 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background: #0d1117;
+    color: #e6edf3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* =========================
+   CHAT CONTAINER
+========================= */
+
+.chat-container {
+    width: 100%;
+    max-width: 50rem;
+    height: 95vh;
+    background: #161b22;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0.0625rem solid #30363d;
+}
+
+.header {
+    padding: 1rem;
+    background: #010409;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+    border-bottom: 0.0625rem solid #30363d;
+}
+
+/* =========================
+   MESSAGES
+========================= */
+
+.messages {
+    flex: 1;
+    padding: 1.25rem;
+    overflow-y: auto;
+}
+
+.message {
+    margin-bottom: 0.875rem;
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.625rem;
+    max-width: 75%;
+    line-height: 1.4;
+    animation: fadeIn 0.2s ease;
+}
+
+.user {
+    background: #238636;
+    align-self: flex-end;
+}
+
+.bot {
+    background: #21262d;
+    align-self: flex-start;
+}
+
+/* =========================
+   INPUT AREA
+========================= */
+
+.input-area {
+    display: flex;
+    padding: 0.75rem;
+    background: #010409;
+    border-top: 0.0625rem solid #30363d;
+}
+
+input {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 0.625rem;
+    border: 0.0625rem solid #30363d;
+    background: #0d1117;
+    color: white;
+    font-size: 0.95rem;
+}
+
+input:focus {
+    outline: none;
+    border-color: #238636;
+}
+
+/* =========================
+   BUTTON
+========================= */
+
+button {
+    margin-left: 0.625rem;
+    padding: 0.625rem 1rem;
+    border: none;
+    border-radius: 0.625rem;
+    background: #238636;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2ea043;
+}
+
+button:disabled {
+    background: #30363d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* =========================
+   LOADING
+========================= */
+
+.spinner {
+    border: 0.1875rem solid #30363d;
+    border-top: 0.1875rem solid #238636;
+    border-radius: 50%;
+    width: 1.125rem;
+    height: 1.125rem;
+    animation: spin 0.8s linear infinite;
+    margin: 0.3125rem;
+}
+
+.spinner-dots {
+    margin-left: 0.3125rem;
+    opacity: 0.8;
+}
+
+/* =========================
+   DONATION BOX
+========================= */
+
+.donation-box {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+
+    background: #c62828;
+    color: white;
+
+    padding: 14px 18px;
+    border-radius: 16px;
+
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    z-index: 999;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    min-width: 220px;
+}
+
+.donation-link {
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    display: block;
+    text-align: center;
+}
+
+.donation-alias {
+    display: block;
+    text-align: center;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+    body {
+        align-items: stretch;
+    }
+
+    .chat-container {
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .messages {
+        padding-bottom: 140px;
+    }
+
+    .donation-box {
+        position: static;
+        margin: 12px;
+        min-width: auto;
+        text-align: center;
+    }
+
+    .input-area {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+    }
+}

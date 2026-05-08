@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spring.ia.exception.GroqClientException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,10 +18,10 @@ import java.util.Map;
  * Cliente reutilizable para Groq API.
  * Encapsula toda la lógica de comunicación HTTP con Groq.
  */
+@Slf4j
 @Component
 public class GroqClient {
 
-    private static final Logger log = LoggerFactory.getLogger(GroqClient.class);
     private static final int TIMEOUT_SECONDS = 10;
     private static final int MAX_RETRIES = 2;
 

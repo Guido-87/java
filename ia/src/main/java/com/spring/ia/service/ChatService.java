@@ -3,13 +3,16 @@ package com.spring.ia.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.HashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import com.spring.ia.client.GroqClient;
+import com.spring.ia.dto.ChatRequest;
 import com.spring.ia.util.LanguageDetector;
+
+import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Servicio de chat que orquesta la conversación.
@@ -18,11 +21,11 @@ import com.spring.ia.util.LanguageDetector;
  * - Lógica de negocio (selección de modelo, resumen, etc)
  * - Manejo de usuarios
  */
+@Slf4j
 @Service
 public class ChatService {
 
     private static final int MAX_MENSAJES = 10;
-    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
     private final GroqClient groqClient;
     private final RedisService redisService;
 
@@ -31,32 +34,46 @@ public class ChatService {
         this.redisService = redisService;
     }
 
-    public String chat(String userId, String prompt) {
+    public String chat(ChatRequest input, HttpSession session) {
+        String prompt = input.prompt();
         log.info("Prompt recibido: {}", prompt);
+        log.info("Longitud del prompt del usuario: {}", prompt.length());
 
-        // 1. Traer conversación desde Redis
-        List<Map<String, String>> mensajes = redisService.obtenerConversacion(userId);
+        // 1. userId desde sesión
+        String userId = (String) session.getAttribute("userId");
+        if (userId == null) {
+            userId = UUID.randomUUID().toString();
+            session.setAttribute("userId", userId);
+        }
+        log.info("UserId: {}", userId);
 
-        // 2. Agregar mensaje del usuario
+        // 2. obtener conversación
+        List<Map<String, String>> mensajes =
+                redisService.obtenerConversacion(userId);
+        if (mensajes == null) {
+            mensajes = new ArrayList<>();
+        }
+
+        // 3. agregar user message
         Map<String, String> userMsg = new HashMap<>();
         userMsg.put("role", "user");
         userMsg.put("content", prompt);
         mensajes.add(userMsg);
 
-        // 3. Preparar mensajes (resumen + límite)
+        // 4. preparar mensajes
         mensajes = prepararMensajes(mensajes);
 
-        // 4. Llamar IA
+        // 5. llamar IA
         String respuesta = llamarIA(mensajes, prompt);
-
-        // 5. Guardar respuesta
         String safeRespuesta = respuesta != null ? respuesta : "";
+
+        // 6. guardar assistant
         Map<String, String> assistantMsg = new HashMap<>();
         assistantMsg.put("role", "assistant");
         assistantMsg.put("content", safeRespuesta);
         mensajes.add(assistantMsg);
 
-        // 6. Guardar en Redis
+        // 7. persistir en Redis
         try {
             redisService.guardarConversacion(userId, mensajes);
         } catch (Exception e) {
