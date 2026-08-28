@@ -7,7 +7,7 @@ RUN mvn -version
 RUN mvn -B -DskipTests package
 
 # Runtime
-FROM gcr.io/distroless/java25-debian12
+FROM gcr.io/distroless/java25-debian13
 WORKDIR /app
 COPY --from=build /build/target/*.jar app.jar
 EXPOSE 8080
