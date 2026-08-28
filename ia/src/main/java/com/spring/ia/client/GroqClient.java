@@ -7,8 +7,11 @@ import com.spring.ia.exception.GroqClientException;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +51,6 @@ public class GroqClient {
      */
     public String completeChat(List<Map<String, String>> mensajes, String model) {
         log.info("Llamando Groq con modelo: {}", model);
-
         String response = callGroqApi(mensajes, model);
         return extractResponse(response);
     }
@@ -62,10 +64,21 @@ public class GroqClient {
             body.put("model", model);
             body.put("messages", mensajes);
             log.info("Llamando a Groq con modelo: {}", model);
+            log.info("Groq mensajes: {}", mensajes);
             String response = webClient.post()
                     .uri("/v1/chat/completions")
                     .bodyValue(body)
                     .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .flatMap(errorBody -> {
+                                        log.error("Groq HTTP {} - {}", clientResponse.statusCode(), errorBody);
+                                        return Mono.error(new GroqClientException(
+                                                "Groq respondió " + clientResponse.statusCode() + ": " + errorBody
+                                        ));
+                                    })
+                    )
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                     .retry(MAX_RETRIES)

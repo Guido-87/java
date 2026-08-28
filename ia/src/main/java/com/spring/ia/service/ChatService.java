@@ -98,26 +98,20 @@ public class ChatService {
         try {
             return groqClient.completeChat(mensajesConSistema, model);
         } catch (Exception e) {
-            log.warn("Fallback al modelo 8B", e);
-            return groqClient.completeChat(
-                    mensajesConSistema,
-                    "llama-3.1-8b-instant"
-            );
+            log.warn("Fallback al modelo GPT-OSS 20B", e);
+            return groqClient.completeChat( mensajesConSistema, "openai/gpt-oss-20b" );
         }
     }
 
     private String elegirModelo(String prompt) {
         prompt = prompt != null ? prompt.toLowerCase() : "";
-        if (prompt.length() > 500) return "llama-3.3-70b-versatile";
-        if (prompt.contains("explica") ||
-            prompt.contains("analiza") ||
-            prompt.contains("por que") ||
-            prompt.contains("arquitectura") ||
-            prompt.contains("optimizar")) {
-            return "llama-3.3-70b-versatile";
+        if (prompt.length() > 500) {
+            return "openai/gpt-oss-120b";
         }
-
-        return "llama-3.1-8b-instant";
+        if (prompt.contains("explica") || prompt.contains("analiza") || prompt.contains("por que") || prompt.contains("arquitectura") || prompt.contains("optimizar")) {
+            return "openai/gpt-oss-120b";
+        }
+        return "openai/gpt-oss-20b";
     }
 
     private List<Map<String, String>> prepararMensajes(List<Map<String, String>> mensajes) {
@@ -139,7 +133,7 @@ public class ChatService {
         Map<String, String> resumenMsg = new HashMap<>();
         resumenMsg.put("role", "system");
         resumenMsg.put("content", resumen != null ? resumen : "");
-        nuevos.add(0, resumenMsg);
+        nuevos.addFirst(resumenMsg);
         return nuevos;
     }
 
