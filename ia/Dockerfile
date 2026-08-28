@@ -1,11 +1,13 @@
 # Build
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.9-eclipse-temurin-25 AS build
 WORKDIR /build
 COPY . .
+RUN java -version
+RUN mvn -version
 RUN mvn -B -DskipTests package
 
 # Runtime
-FROM gcr.io/distroless/java17-debian12
+FROM gcr.io/distroless/java25-debian12
 WORKDIR /app
 COPY --from=build /build/target/*.jar app.jar
 EXPOSE 8080
