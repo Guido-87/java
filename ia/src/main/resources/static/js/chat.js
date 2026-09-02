@@ -21,8 +21,8 @@ function initChat() {
     }
 
     async function send() {
-        const prompt = input.value;
-        if (!prompt.trim()) return;
+        const prompt = input.value.trim();
+        if (!prompt) return;
 
         addMessage(prompt, "user");
 
@@ -44,20 +44,38 @@ function initChat() {
                 body: JSON.stringify({ prompt })
             });
 
-            const data = await response.json();
+            let data = {};
+            try {
+                data = await response.json();
+            } catch {
+                // La respuesta no contiene JSON válido
+            }
 
             loadingMsg.remove();
 
             if (!response.ok) {
-                addMessage("⚠️ " + data.message, "bot");
+                let errorMessage;
+
+                if (response.status === 400) {
+                    errorMessage = "El mensaje no es válido. Revisá lo que escribiste.";
+                } else if (response.status === 503) {
+                    errorMessage = "El servicio no está disponible temporalmente. Intentá nuevamente en unos segundos.";
+                } else if (response.status >= 500) {
+                    errorMessage = "Ocurrió un error en el servidor. Intentá nuevamente más tarde.";
+                } else {
+                    errorMessage = data.message || "No se pudo procesar el mensaje.";
+                }
+
+                addMessage("⚠️ " + errorMessage, "bot");
                 return;
             }
 
             addMessage(data.response, "bot");
 
         } catch (e) {
+            console.error("Error al enviar mensaje:", e);
             loadingMsg.remove();
-            addMessage("⚠️ Error de conexión", "bot");
+            addMessage("⚠️ No se pudo conectar con el servidor. Revisá tu conexión e intentá nuevamente.", "bot");
         } finally {
             input.disabled = false;
             button.disabled = !input.value.trim();
@@ -65,19 +83,23 @@ function initChat() {
         }
     }
 
-    // ✅ ACÁ va TODO lo de eventos (UNA SOLA VEZ)
     function bindEvents() {
-        button.addEventListener("click", send);
+        button.addEventListener("click", () => void send);
+
         input.addEventListener("input", () => {
             button.disabled = !input.value.trim();
         });
+
         input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && input.value.trim()) {
-                send();
+            if (e.key === "Enter" && !e.shiftKey && input.value.trim()) {
+                e.preventDefault();
+                void send();
             }
         });
     }
+
     bindEvents();
+
     window.chatAppLoaded = true;
     console.log("Chat listo ✔");
 }
