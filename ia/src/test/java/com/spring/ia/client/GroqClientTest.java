@@ -31,6 +31,7 @@ class GroqClientTest {
     @Mock
     private WebClient.RequestBodySpec requestBodySpec;
 
+    @SuppressWarnings("rawtypes")
     @Mock
     private WebClient.RequestHeadersSpec requestHeadersSpec;
 
@@ -144,7 +145,8 @@ class GroqClientTest {
         List<Map<String, String>> messages = List.of(
                 Map.of("role", "user", "content", "Test")
         );
-        setupWebClientMocksFail("{\"error\": \"Invalid response\"}");
+
+        setupWebClientMocks("{\"choices\": []}");
 
         // Act & Assert
         assertThrows(GroqClientException.class, () ->
@@ -257,24 +259,13 @@ class GroqClientTest {
         assertTrue(result.contains("<code>"));
     }
 
-    // Helper methods
-
+    @SuppressWarnings({"unchecked"})
     private void setupWebClientMocks(String responseBody) {
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
         when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(String.class))
-                .thenReturn(Mono.just(responseBody));
-    }
-
-    private void setupWebClientMocksFail(String responseBody) {
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        // Simular respuesta con índice 0 pero sin choices válidos
-        when(responseSpec.bodyToMono(String.class))
-                .thenReturn(Mono.just("{\"choices\": []}"));
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(responseBody));
     }
 }

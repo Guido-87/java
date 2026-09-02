@@ -128,4 +128,116 @@ class ChatServiceTest {
 
         assertNotNull(result);
     }
+
+    @Test
+    @DisplayName("Debería resumir la conversación cuando supera 10 mensajes")
+    void shouldSummarizeConversationWhenExceedsLimit() {
+
+        when(session.getAttribute("userId")).thenReturn("user123");
+
+        List<Map<String, String>> mensajes = new ArrayList<>();
+
+        for (int i = 0; i < 11; i++) {
+            mensajes.add(Map.of(
+                    "role", i % 2 == 0 ? "user" : "assistant",
+                    "content", "mensaje " + i
+            ));
+        }
+
+        when(redisService.obtenerConversacion("user123"))
+                .thenReturn(mensajes);
+
+        when(groqClient.completeChat(anyList(), anyString()))
+                .thenReturn("Resumen de la conversación");
+
+        ChatRequest request = new ChatRequest("nuevo mensaje");
+
+        String result = chatService.chat(request, session);
+
+        assertEquals("Resumen de la conversación", result);
+
+        verify(groqClient, atLeast(2))
+                .completeChat(anyList(), anyString());
+
+        verify(redisService)
+                .guardarConversacion(eq("user123"), anyList());
+    }
+
+    @Test
+    @DisplayName("Debería usar fallback si Groq falla")
+    void shouldUseFallbackWhenGroqFails() {
+
+        when(session.getAttribute("userId")).thenReturn("user123");
+
+        when(redisService.obtenerConversacion(anyString()))
+                .thenReturn(new ArrayList<>());
+
+        when(groqClient.completeChat(anyList(), eq("openai/gpt-oss-20b")))
+                .thenThrow(new RuntimeException("Groq caído"))
+                .thenReturn("respuesta fallback");
+
+        ChatRequest request = new ChatRequest("hola");
+
+        String result = chatService.chat(request, session);
+
+        assertEquals("respuesta fallback", result);
+
+        verify(groqClient, times(2))
+                .completeChat(anyList(), anyString());
+    }
+
+    @Test
+    @DisplayName("Debería seleccionar modelo avanzado para consultas complejas")
+    void shouldSelectAdvancedModelForComplexPrompt() {
+
+        when(session.getAttribute("userId")).thenReturn("user123");
+
+        when(redisService.obtenerConversacion(anyString()))
+                .thenReturn(new ArrayList<>());
+
+        when(groqClient.completeChat(anyList(), eq("openai/gpt-oss-120b")))
+                .thenReturn("respuesta avanzada");
+
+        ChatRequest request = new ChatRequest(
+                "explica la arquitectura de microservicios con Spring"
+        );
+
+        String result = chatService.chat(request, session);
+
+        assertEquals("respuesta avanzada", result);
+
+        verify(groqClient)
+                .completeChat(anyList(), eq("openai/gpt-oss-120b"));
+    }
+
+    @Test
+    @DisplayName("Debería agregar prompt de experto para consultas de Java")
+    void shouldUseExpertSystemPromptForJava() {
+
+        when(session.getAttribute("userId")).thenReturn("user123");
+
+        when(redisService.obtenerConversacion(anyString()))
+                .thenReturn(new ArrayList<>());
+
+        when(groqClient.completeChat(anyList(), anyString()))
+                .thenReturn("respuesta");
+
+        ChatRequest request = new ChatRequest(
+                "¿Cómo implementar Redis con Spring Boot?"
+        );
+
+        chatService.chat(request, session);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Map<String, String>>> captor =
+                ArgumentCaptor.forClass(List.class);
+
+        verify(groqClient).completeChat(captor.capture(), anyString());
+
+        List<Map<String, String>> mensajes = captor.getValue();
+
+        assertEquals("system", mensajes.getFirst().get("role"));
+        assertTrue(mensajes.getFirst().get("content").contains("Java"));
+        assertTrue(mensajes.getFirst().get("content").contains("Spring Boot"));
+    }
 }
