@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 
+@Slf4j
 @Service
 public class RedisService {
     private final StringRedisTemplate redisTemplate;
@@ -22,20 +24,30 @@ public class RedisService {
 
     public List<Map<String, String>> obtenerConversacion(String userId) {
         try {
+            long inicio = System.nanoTime();
             String json = redisTemplate.opsForValue().get("chat:" + userId);
+            log.info("Redis GET chat:{} tardó {} ms", userId, medirDuracion(inicio));
             if (json == null) return new ArrayList<>();
-            return mapper.readValue(json, new TypeReference<List<Map<String, String>>>() {});
+            return mapper.readValue(json, new TypeReference<>() {
+            });
         } catch (Exception e) {
+            log.error("Error al obtener conversación para userId={}", userId, e);
             return new ArrayList<>();
         }
     }
 
     public void guardarConversacion(String userId, List<Map<String, String>> mensajes) {
         try {
+            long inicio = System.nanoTime();
             String json = mapper.writeValueAsString(mensajes);
             redisTemplate.opsForValue().set("chat:" + userId, json, TTL);
+            log.info("Redis SET chat:{} tardó {} ms", userId, medirDuracion(inicio));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error al guardar conversación para userId={}", userId, e);
         }
+    }
+
+    private long medirDuracion(long inicio) {
+        return (System.nanoTime() - inicio) / 1_000_000;
     }
 }
