@@ -33,7 +33,9 @@ body {
 .header {
     padding: 1rem;
     background: #010409;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 1rem;
     font-weight: 500;
     border-bottom: 0.0625rem solid #30363d;
@@ -107,6 +109,16 @@ button {
     color: white;
     font-weight: 500;
     cursor: pointer;
+}
+
+.header button {
+    margin-left: 0;
+    padding: 0.5rem 0.75rem;
+    background: #30363d;
+}
+
+.header button:hover {
+    background: #484f58;
 }
 
 button:hover {
