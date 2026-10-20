@@ -19,6 +19,7 @@ paths:
                 prompt:
                   type: string
                   minLength: 1
+                  pattern: '\S'
       responses:
         '200':
           description: Chat response
