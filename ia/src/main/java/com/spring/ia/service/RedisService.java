@@ -31,7 +31,7 @@ public class RedisService {
             return mapper.readValue(json, new TypeReference<>() {
             });
         } catch (Exception e) {
-            log.error("Error al obtener conversación para userId={}", userId, e);
+            log.error("Error al obtener conversación para userId={}", userId, e); 
             return new ArrayList<>();
         }
     }
