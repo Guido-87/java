@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: IA Chat API
+  version: 1.0.0
+  description: HTTP API exposed by this Spring Boot application.
+paths:
+  /api/chat:
+    post:
+      summary: Send a chat prompt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - prompt
+              properties:
+                prompt:
+                  type: string
+                  minLength: 1
+                  pattern: '\S'
+      responses:
+        '200':
+          description: Chat response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - response
+                properties:
+                  response:
+                    type: string
+        '400':
+          description: Request validation failed
+        '500':
+          description: Unexpected server error
+        '503':
+          description: Redis service unavailable

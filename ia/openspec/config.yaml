@@ -1,0 +1,7 @@
+schema: spec-driven
+
+context: |
+  This repository is a Java 25 Maven application using Spring Boot 4.1.1. The web UI is server-rendered with Thymeleaf; the JSON chat endpoint integrates with Groq and Redis.
+  Before planning or implementing, follow AGENTS.md and the applicable guidance in docs/.
+  Keep proposals and tasks consistent with the existing package structure and behavior. Do not assume a relational database or a separate React frontend.
+  The API contract is documented in docs/api-spec.yml. Conversation state is documented in docs/data-model.md.
