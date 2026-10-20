@@ -16,6 +16,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import reactor.core.scheduler.Schedulers;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -284,6 +288,45 @@ class GroqClientTest {
         assertTrue(output.getOut().contains("attempt=1"));
         assertTrue(output.getOut().contains("requestId=request-test-123"));
         assertTrue(output.getOut().contains("durationMs="));
+    }
+
+    @Test
+    @DisplayName("Registra la causa del reintento y conserva el requestId entre hilos reactivos")
+    void logsRetryReasonAndStableRequestId(CapturedOutput output) {
+        String requestId = "retry-request-456";
+        String privatePrompt = "retry-prompt-secret";
+        String privateResponse = "retry-answer-secret";
+        String privateFailure = "retry-exception-secret";
+        String successBody = """
+                {"choices":[{"message":{"content":"retry-answer-secret"}}]}
+                """;
+        AtomicInteger responseCalls = new AtomicInteger();
+        setupWebClientMocks(successBody);
+        when(responseSpec.bodyToMono(String.class)).thenAnswer(invocation -> {
+            if (responseCalls.getAndIncrement() == 0) {
+                return Mono.<String>error(new TimeoutException(privateFailure))
+                        .publishOn(Schedulers.parallel());
+            }
+            return Mono.just(successBody).publishOn(Schedulers.parallel());
+        });
+
+        MDC.put("requestId", requestId);
+        String result;
+        try {
+            result = groqClient.completeChat(
+                    List.of(Map.of("role", "user", "content", privatePrompt)), "test-model");
+        } finally {
+            MDC.remove("requestId");
+        }
+
+        assertEquals("retry-answer-secret", result);
+        assertTrue(output.getOut().contains("outcome=error"));
+        assertTrue(output.getOut().contains("retry reason=timeout"));
+        assertTrue(output.getOut().contains(requestId));
+        assertFalse(output.getOut().contains(privatePrompt));
+        assertFalse(output.getOut().contains(privateResponse));
+        assertFalse(output.getOut().contains(privateFailure));
+        verify(responseSpec, times(2)).bodyToMono(String.class);
     }
 
     @SuppressWarnings({"unchecked"})

@@ -11,13 +11,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Cliente reutilizable para Groq API.
@@ -61,6 +64,7 @@ public class GroqClient {
      * Realiza la llamada HTTP a Groq.
      */
     private String callGroqApi(List<Map<String, String>> mensajes, String model) {
+        String requestId = requestId();
         try {
             Map<String, Object> body = new HashMap<>();
             body.put("model", model);
@@ -69,7 +73,7 @@ public class GroqClient {
             String response = Mono.defer(() -> {
                         int attempt = attempts.incrementAndGet();
                         long startedAt = System.nanoTime();
-                        log.info("Groq attempt started requestId={} attempt={} model={}", requestId(), attempt, model);
+                        log.info("Groq attempt started requestId={} attempt={} model={}", requestId, attempt, model);
                         return webClient.post()
                                 .uri("/v1/chat/completions")
                                 .bodyValue(body)
@@ -78,15 +82,21 @@ public class GroqClient {
                                         clientResponse -> Mono.error(new GroqClientException(
                                                 "Groq respondió con estado HTTP " + clientResponse.statusCode())))
                                 .bodyToMono(String.class)
+                                .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                                 .doOnSuccess(result -> log.info(
                                         "Groq attempt completed requestId={} attempt={} model={} outcome=success durationMs={}",
-                                        requestId(), attempt, model, elapsedMs(startedAt)))
+                                        requestId, attempt, model, elapsedMs(startedAt)))
                                 .doOnError(error -> log.warn(
                                         "Groq attempt completed requestId={} attempt={} model={} outcome=error errorType={} durationMs={}",
-                                        requestId(), attempt, model, error.getClass().getSimpleName(), elapsedMs(startedAt)));
+                                        requestId, attempt, model, error.getClass().getSimpleName(), elapsedMs(startedAt)));
                     })
-                    .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
-                    .retry(MAX_RETRIES)
+                    .retryWhen(Retry.max(MAX_RETRIES)
+                            .doBeforeRetry(signal -> log.warn(
+                                    "Groq retry reason={} requestId={} retry={} nextAttempt={} errorType={}",
+                                    retryReason(signal.failure()), requestId,
+                                    signal.totalRetries() + 1, signal.totalRetries() + 2,
+                                    signal.failure().getClass().getSimpleName()))
+                            .onRetryExhaustedThrow((spec, signal) -> signal.failure()))
                     .block();
             if (response == null) {
                 throw new GroqClientException("Respuesta vacía de Groq");
@@ -94,9 +104,22 @@ public class GroqClient {
             return response;
         } catch (Exception e) {
             log.error("Error llamando a Groq API requestId={} model={} errorType={}",
-                    requestId(), model, e.getClass().getSimpleName());
+                    requestId, model, e.getClass().getSimpleName());
             throw new GroqClientException("Error comunicándose con Groq (" + e.getClass().getSimpleName() + ")", e);
         }
+    }
+
+    private String retryReason(Throwable failure) {
+        if (failure instanceof TimeoutException) {
+            return "timeout";
+        }
+        if (failure instanceof WebClientRequestException) {
+            return "network_error";
+        }
+        if (failure instanceof GroqClientException) {
+            return "upstream_http_error";
+        }
+        return "upstream_error";
     }
 
     private long elapsedMs(long startedAt) {
