@@ -49,13 +49,15 @@ public class RedisService {
     }
 
     public void guardarConversacion(String userId, List<Map<String, String>> mensajes) {
+        long inicio = System.nanoTime();
         try {
-            long inicio = System.nanoTime();
             String json = mapper.writeValueAsString(mensajes);
             redisTemplate.opsForValue().set("chat:" + userId, json, TTL);
-            log.info("Redis SET requestId={} tardó {} ms", requestId(), medirDuracion(inicio));
+            log.info("Redis SET requestId={} outcome=success durationMs={}", requestId(), medirDuracion(inicio));
         } catch (Exception e) {
-            log.error("Error al guardar conversación para userId={}", userId, e);
+            Throwable rootCause = rootCause(e);
+            log.error("Redis SET requestId={} outcome=error errorType={} durationMs={}",
+                    requestId(), rootCause.getClass().getSimpleName(), medirDuracion(inicio));
         }
     }
 

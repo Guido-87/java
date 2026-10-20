@@ -103,6 +103,28 @@ class RedisServiceTest {
     }
 
     @Test
+    @DisplayName("Debería registrar duración y causa raíz si falla Redis SET")
+    void logsDurationAndRootCauseWhenSetFails(CapturedOutput output) {
+        String privateFailure = "redis-set-private-failure";
+        doThrow(new RedisConnectionFailureException("Redis connection failed",
+                new SocketTimeoutException(privateFailure)))
+                .when(valueOperations).set(eq("chat:user123"), anyString(), any(Duration.class));
+
+        MDC.put("requestId", "redis-set-error-request-456");
+        try {
+            redisService.guardarConversacion("user123", List.of(Map.of("role", "user", "content", "hi")));
+        } finally {
+            MDC.remove("requestId");
+        }
+
+        String logs = output.getAll();
+        assertTrue(logs.contains("Redis SET requestId=redis-set-error-request-456 outcome=error"));
+        assertTrue(logs.contains("errorType=SocketTimeoutException"));
+        assertTrue(logs.contains("durationMs="));
+        assertFalse(logs.contains(privateFailure));
+    }
+
+    @Test
     @DisplayName("Debería manejar JSON inválido gracefully")
     void testObtenerConversacionWithInvalidJson() {
         // Arrange

@@ -109,7 +109,7 @@ function initChat() {
 
     function bindEvents() {
         newChatButton.addEventListener("click", () => void startNewChat());
-        button.addEventListener("click", () => void send);
+        button.addEventListener("click", () => void send());
 
         input.addEventListener("input", () => {
             button.disabled = !input.value.trim();

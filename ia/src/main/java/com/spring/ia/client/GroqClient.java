@@ -91,6 +91,7 @@ public class GroqClient {
                                         requestId, attempt, model, error.getClass().getSimpleName(), elapsedMs(startedAt)));
                     })
                     .retryWhen(Retry.max(MAX_RETRIES)
+                            .filter(this::isRetryable)
                             .doBeforeRetry(signal -> log.warn(
                                     "Groq retry reason={} requestId={} retry={} nextAttempt={} errorType={}",
                                     retryReason(signal.failure()), requestId,
@@ -120,6 +121,10 @@ public class GroqClient {
             return "upstream_http_error";
         }
         return "upstream_error";
+    }
+
+    private boolean isRetryable(Throwable failure) {
+        return failure instanceof TimeoutException || failure instanceof WebClientRequestException;
     }
 
     private long elapsedMs(long startedAt) {

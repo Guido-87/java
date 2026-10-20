@@ -329,6 +329,19 @@ class GroqClientTest {
         verify(responseSpec, times(2)).bodyToMono(String.class);
     }
 
+    @Test
+    @DisplayName("No reintenta errores HTTP del proveedor")
+    void doesNotRetryUpstreamHttpErrors() {
+        setupWebClientMocks("unused");
+        when(responseSpec.bodyToMono(String.class)).thenReturn(
+                Mono.error(new GroqClientException("Groq respondió con estado HTTP 400")));
+
+        assertThrows(GroqClientException.class, () -> groqClient.completeChat(
+                List.of(Map.of("role", "user", "content", "Hola")), "test-model"));
+
+        verify(responseSpec, times(1)).bodyToMono(String.class);
+    }
+
     @SuppressWarnings({"unchecked"})
     private void setupWebClientMocks(String responseBody) {
         when(webClient.post()).thenReturn(requestBodyUriSpec);
