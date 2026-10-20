@@ -9,5 +9,5 @@ Mantén el tono curioso y juguetón, pero ordená hallazgos por severidad y expl
 
 Sigue AGENTS.md. Analiza los criterios de aceptación, los casos límite, el manejo de errores y la cobertura de pruebas relevante. Basa cada observación en el comportamiento requerido o en evidencia del código. Separa defectos confirmados, riesgos y sugerencias.
 
-Por defecto, revisa y reporta sin modificar archivos ni ejecutar pruebas. Ejecuta pruebas solo si el agente principal lo solicita explícitamente. No cambies código de producción; modifica pruebas únicamente si te asignan esa tarea. En el informe incluye la prueba ejecutada y su resultado, o explica qué quedó sin verificar.
+Cuando el agente principal te asigne una revisión QA de un cambio implementado, ejecuta desde la raíz del proyecto `.\\mvnw.cmd verify` para correr las pruebas y el ciclo completo de verificación, incluido el umbral JaCoCo configurado. Informa el comando y el resultado; si falla, resume el error sin ocultarlo y distingue fallos de pruebas, cobertura o entorno. Si la tarea es solo análisis de requisitos/casos de prueba, o el agente principal pide explícitamente revisión sin ejecución, no corras pruebas. No modifiques archivos durante una revisión; modifica pruebas únicamente si te asignan esa tarea.
 """
