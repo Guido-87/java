@@ -6,6 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.MDC;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,12 +16,17 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import reactor.core.scheduler.Schedulers;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 @DisplayName("GroqClient Tests")
 class GroqClientTest {
 
@@ -257,6 +265,81 @@ class GroqClientTest {
         // Assert
         assertTrue(result.contains("😊"));
         assertTrue(result.contains("<code>"));
+    }
+
+    @Test
+    @DisplayName("Registra intentos sin exponer mensajes ni respuesta del proveedor")
+    void logsTimingWithoutExposingConversation(CapturedOutput output) {
+        String privatePrompt = "prompt-confidencial-7f31";
+        String privateAnswer = "respuesta-confidencial-91ab";
+        setupWebClientMocks("""
+                {"choices":[{"message":{"content":"respuesta-confidencial-91ab"}}]}
+                """);
+
+        MDC.put("requestId", "request-test-123");
+        try {
+            groqClient.completeChat(List.of(Map.of("role", "user", "content", privatePrompt)), "test-model");
+        } finally {
+            MDC.remove("requestId");
+        }
+
+        assertFalse(output.getOut().contains(privatePrompt));
+        assertFalse(output.getOut().contains(privateAnswer));
+        assertTrue(output.getOut().contains("attempt=1"));
+        assertTrue(output.getOut().contains("requestId=request-test-123"));
+        assertTrue(output.getOut().contains("durationMs="));
+    }
+
+    @Test
+    @DisplayName("Registra la causa del reintento y conserva el requestId entre hilos reactivos")
+    void logsRetryReasonAndStableRequestId(CapturedOutput output) {
+        String requestId = "retry-request-456";
+        String privatePrompt = "retry-prompt-secret";
+        String privateResponse = "retry-answer-secret";
+        String privateFailure = "retry-exception-secret";
+        String successBody = """
+                {"choices":[{"message":{"content":"retry-answer-secret"}}]}
+                """;
+        AtomicInteger responseCalls = new AtomicInteger();
+        setupWebClientMocks(successBody);
+        when(responseSpec.bodyToMono(String.class)).thenAnswer(invocation -> {
+            if (responseCalls.getAndIncrement() == 0) {
+                return Mono.<String>error(new TimeoutException(privateFailure))
+                        .publishOn(Schedulers.parallel());
+            }
+            return Mono.just(successBody).publishOn(Schedulers.parallel());
+        });
+
+        MDC.put("requestId", requestId);
+        String result;
+        try {
+            result = groqClient.completeChat(
+                    List.of(Map.of("role", "user", "content", privatePrompt)), "test-model");
+        } finally {
+            MDC.remove("requestId");
+        }
+
+        assertEquals("retry-answer-secret", result);
+        assertTrue(output.getOut().contains("outcome=error"));
+        assertTrue(output.getOut().contains("retry reason=timeout"));
+        assertTrue(output.getOut().contains(requestId));
+        assertFalse(output.getOut().contains(privatePrompt));
+        assertFalse(output.getOut().contains(privateResponse));
+        assertFalse(output.getOut().contains(privateFailure));
+        verify(responseSpec, times(2)).bodyToMono(String.class);
+    }
+
+    @Test
+    @DisplayName("No reintenta errores HTTP del proveedor")
+    void doesNotRetryUpstreamHttpErrors() {
+        setupWebClientMocks("unused");
+        when(responseSpec.bodyToMono(String.class)).thenReturn(
+                Mono.error(new GroqClientException("Groq respondió con estado HTTP 400")));
+
+        assertThrows(GroqClientException.class, () -> groqClient.completeChat(
+                List.of(Map.of("role", "user", "content", "Hola")), "test-model"));
+
+        verify(responseSpec, times(1)).bodyToMono(String.class);
     }
 
     @SuppressWarnings({"unchecked"})

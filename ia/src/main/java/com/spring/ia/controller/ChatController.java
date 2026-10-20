@@ -27,4 +27,9 @@ public class ChatController {
         String response = chatService.chat(input, session);
         return new ChatResponse(response);
     }
+
+    @PostMapping("/chat/new")
+    public void newChat(HttpSession session) {
+        chatService.iniciarNuevoChat(session);
+    }
 }

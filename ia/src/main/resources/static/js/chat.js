@@ -3,9 +3,10 @@ function initChat() {
 
     const input = document.getElementById("input");
     const button = document.getElementById("sendBtn");
+    const newChatButton = document.getElementById("newChatBtn");
     const messages = document.getElementById("messages");
 
-    if (!input || !button || !messages) {
+    if (!input || !button || !newChatButton || !messages) {
         console.error("Faltan elementos del DOM");
         window.chatAppLoaded = false;
         throw new Error("UI no inicializada");
@@ -83,8 +84,32 @@ function initChat() {
         }
     }
 
+    async function startNewChat() {
+        newChatButton.disabled = true;
+        try {
+            const response = await fetch("/api/chat/new", {
+                method: "POST",
+                credentials: "include"
+            });
+            if (!response.ok) {
+                throw new Error("No se pudo iniciar un nuevo chat");
+            }
+
+            messages.replaceChildren();
+            input.value = "";
+            button.disabled = true;
+            input.focus();
+        } catch (e) {
+            console.error("Error al iniciar un nuevo chat:", e);
+            addMessage("⚠️ No se pudo iniciar un nuevo chat. Intentá nuevamente.", "bot");
+        } finally {
+            newChatButton.disabled = false;
+        }
+    }
+
     function bindEvents() {
-        button.addEventListener("click", () => void send);
+        newChatButton.addEventListener("click", () => void startNewChat());
+        button.addEventListener("click", () => void send());
 
         input.addEventListener("input", () => {
             button.disabled = !input.value.trim();

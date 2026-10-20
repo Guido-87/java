@@ -9,9 +9,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 @DisplayName("RedisService Tests")
 class RedisServiceTest {
 
@@ -71,6 +76,52 @@ class RedisServiceTest {
         // Assert
         assertNotNull(result);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Debería registrar duración y causa raíz si falla Redis GET")
+    void logsDurationAndRootCauseWhenGetFails(CapturedOutput output) {
+        String privateFailure = "redis-private-failure";
+        when(valueOperations.get("chat:user123")).thenThrow(
+                new RedisConnectionFailureException("Redis connection failed",
+                        new SocketTimeoutException(privateFailure)));
+
+        MDC.put("requestId", "redis-error-request-123");
+        List<Map<String, String>> result;
+        try {
+            result = redisService.obtenerConversacion("user123");
+        } finally {
+            MDC.remove("requestId");
+        }
+
+        String logs = output.getAll();
+        assertTrue(result.isEmpty());
+        assertTrue(logs.contains("Redis GET requestId=redis-error-request-123 outcome=error"));
+        assertTrue(logs.contains("errorType=SocketTimeoutException"));
+        assertTrue(logs.contains("durationMs="));
+        assertFalse(logs.contains(privateFailure));
+    }
+
+    @Test
+    @DisplayName("Debería registrar duración y causa raíz si falla Redis SET")
+    void logsDurationAndRootCauseWhenSetFails(CapturedOutput output) {
+        String privateFailure = "redis-set-private-failure";
+        doThrow(new RedisConnectionFailureException("Redis connection failed",
+                new SocketTimeoutException(privateFailure)))
+                .when(valueOperations).set(eq("chat:user123"), anyString(), any(Duration.class));
+
+        MDC.put("requestId", "redis-set-error-request-456");
+        try {
+            redisService.guardarConversacion("user123", List.of(Map.of("role", "user", "content", "hi")));
+        } finally {
+            MDC.remove("requestId");
+        }
+
+        String logs = output.getAll();
+        assertTrue(logs.contains("Redis SET requestId=redis-set-error-request-456 outcome=error"));
+        assertTrue(logs.contains("errorType=SocketTimeoutException"));
+        assertTrue(logs.contains("durationMs="));
+        assertFalse(logs.contains(privateFailure));
     }
 
     @Test
