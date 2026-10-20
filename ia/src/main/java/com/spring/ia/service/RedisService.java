@@ -24,15 +24,26 @@ public class RedisService {
     }
 
     public List<Map<String, String>> obtenerConversacion(String userId) {
+        long inicio = System.nanoTime();
+        String json;
         try {
-            long inicio = System.nanoTime();
-            String json = redisTemplate.opsForValue().get("chat:" + userId);
-            log.info("Redis GET requestId={} tardó {} ms", requestId(), medirDuracion(inicio));
-            if (json == null) return new ArrayList<>();
+            json = redisTemplate.opsForValue().get("chat:" + userId);
+            log.info("Redis GET requestId={} outcome=success durationMs={}", requestId(), medirDuracion(inicio));
+        } catch (Exception e) {
+            Throwable rootCause = rootCause(e);
+            log.error("Redis GET requestId={} outcome=error errorType={} durationMs={}",
+                    requestId(), rootCause.getClass().getSimpleName(), medirDuracion(inicio));
+            return new ArrayList<>();
+        }
+
+        if (json == null) return new ArrayList<>();
+        try {
             return mapper.readValue(json, new TypeReference<>() {
             });
         } catch (Exception e) {
-            log.error("Error al obtener conversación para userId={}", userId, e); 
+            Throwable rootCause = rootCause(e);
+            log.error("Error al deserializar conversación requestId={} errorType={}",
+                    requestId(), rootCause.getClass().getSimpleName());
             return new ArrayList<>();
         }
     }
@@ -50,6 +61,14 @@ public class RedisService {
 
     private long medirDuracion(long inicio) {
         return (System.nanoTime() - inicio) / 1_000_000;
+    }
+
+    private Throwable rootCause(Throwable error) {
+        Throwable cause = error;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 
     private String requestId() {
