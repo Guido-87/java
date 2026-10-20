@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spring.ia.exception.GroqClientException;
 
+import org.slf4j.MDC;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -51,7 +52,7 @@ public class GroqClient {
      * @throws GroqClientException Si hay error en la llamada
      */
     public String completeChat(List<Map<String, String>> mensajes, String model) {
-        log.info("Llamando Groq con modelo: {}", model);
+        log.info("Llamando Groq con modelo={} requestId={}", model, requestId());
         String response = callGroqApi(mensajes, model);
         return extractResponse(response);
     }
@@ -68,7 +69,7 @@ public class GroqClient {
             String response = Mono.defer(() -> {
                         int attempt = attempts.incrementAndGet();
                         long startedAt = System.nanoTime();
-                        log.info("Groq attempt started attempt={} model={}", attempt, model);
+                        log.info("Groq attempt started requestId={} attempt={} model={}", requestId(), attempt, model);
                         return webClient.post()
                                 .uri("/v1/chat/completions")
                                 .bodyValue(body)
@@ -78,11 +79,11 @@ public class GroqClient {
                                                 "Groq respondió con estado HTTP " + clientResponse.statusCode())))
                                 .bodyToMono(String.class)
                                 .doOnSuccess(result -> log.info(
-                                        "Groq attempt completed attempt={} model={} outcome=success durationMs={}",
-                                        attempt, model, elapsedMs(startedAt)))
+                                        "Groq attempt completed requestId={} attempt={} model={} outcome=success durationMs={}",
+                                        requestId(), attempt, model, elapsedMs(startedAt)))
                                 .doOnError(error -> log.warn(
-                                        "Groq attempt completed attempt={} model={} outcome=error errorType={} durationMs={}",
-                                        attempt, model, error.getClass().getSimpleName(), elapsedMs(startedAt)));
+                                        "Groq attempt completed requestId={} attempt={} model={} outcome=error errorType={} durationMs={}",
+                                        requestId(), attempt, model, error.getClass().getSimpleName(), elapsedMs(startedAt)));
                     })
                     .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                     .retry(MAX_RETRIES)
@@ -92,13 +93,19 @@ public class GroqClient {
             }
             return response;
         } catch (Exception e) {
-            log.error("Error llamando a Groq API model={} errorType={}", model, e.getClass().getSimpleName());
+            log.error("Error llamando a Groq API requestId={} model={} errorType={}",
+                    requestId(), model, e.getClass().getSimpleName());
             throw new GroqClientException("Error comunicándose con Groq (" + e.getClass().getSimpleName() + ")", e);
         }
     }
 
     private long elapsedMs(long startedAt) {
         return (System.nanoTime() - startedAt) / 1_000_000;
+    }
+
+    private String requestId() {
+        String requestId = MDC.get("requestId");
+        return requestId == null ? "-" : requestId;
     }
 
     /**

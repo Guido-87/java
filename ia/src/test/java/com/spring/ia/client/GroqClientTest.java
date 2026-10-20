@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.MDC;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.mockito.Mock;
@@ -271,11 +272,17 @@ class GroqClientTest {
                 {"choices":[{"message":{"content":"respuesta-confidencial-91ab"}}]}
                 """);
 
-        groqClient.completeChat(List.of(Map.of("role", "user", "content", privatePrompt)), "test-model");
+        MDC.put("requestId", "request-test-123");
+        try {
+            groqClient.completeChat(List.of(Map.of("role", "user", "content", privatePrompt)), "test-model");
+        } finally {
+            MDC.remove("requestId");
+        }
 
         assertFalse(output.getOut().contains(privatePrompt));
         assertFalse(output.getOut().contains(privateAnswer));
         assertTrue(output.getOut().contains("attempt=1"));
+        assertTrue(output.getOut().contains("requestId=request-test-123"));
         assertTrue(output.getOut().contains("durationMs="));
     }
 
