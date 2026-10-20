@@ -12,7 +12,7 @@ Treat the checked-in source, `pom.xml`, and `src/main/resources/application.prop
 ## Working principles
 
 - Make focused changes that solve the requested problem and fit the existing code.
-- For behavior changes, add or update appropriate automated tests. Prefer test-first development when practical; do not create tests for documentation-only changes.
+- For behavior changes, use TDD: write a failing automated test first, implement the minimum change to pass it, then refactor. Add or update appropriate tests; do not create tests for documentation-only changes.
 - Preserve existing public behavior unless the request explicitly changes it.
 - Keep Java names and APIs idiomatic. Keep user-facing messages in the language already used by that part of the application; technical documentation in `docs/` should be written in English.
 - Do not add dependencies or introduce architectural patterns without a concrete need.
