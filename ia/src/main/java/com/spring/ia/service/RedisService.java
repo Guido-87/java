@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.MDC;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ public class RedisService {
         try {
             long inicio = System.nanoTime();
             String json = redisTemplate.opsForValue().get("chat:" + userId);
-            log.info("Redis GET chat:{} tardó {} ms", userId, medirDuracion(inicio));
+            log.info("Redis GET requestId={} tardó {} ms", requestId(), medirDuracion(inicio));
             if (json == null) return new ArrayList<>();
             return mapper.readValue(json, new TypeReference<>() {
             });
@@ -41,7 +42,7 @@ public class RedisService {
             long inicio = System.nanoTime();
             String json = mapper.writeValueAsString(mensajes);
             redisTemplate.opsForValue().set("chat:" + userId, json, TTL);
-            log.info("Redis SET chat:{} tardó {} ms", userId, medirDuracion(inicio));
+            log.info("Redis SET requestId={} tardó {} ms", requestId(), medirDuracion(inicio));
         } catch (Exception e) {
             log.error("Error al guardar conversación para userId={}", userId, e);
         }
@@ -49,5 +50,10 @@ public class RedisService {
 
     private long medirDuracion(long inicio) {
         return (System.nanoTime() - inicio) / 1_000_000;
+    }
+
+    private String requestId() {
+        String requestId = MDC.get("requestId");
+        return requestId == null ? "-" : requestId;
     }
 }

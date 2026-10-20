@@ -38,12 +38,11 @@ public class ChatService {
 
     public String chat(ChatRequest input, HttpSession session) {
         String prompt = input.prompt();
-        log.info("Prompt recibido: {}", prompt);
         log.info("Longitud del prompt del usuario: {}", prompt.length());
 
         // El identificador de sesión también identifica la conversación activa.
         String userId = obtenerOCrearChatId(session);
-        log.info("UserId: {}", userId);
+        log.debug("Conversación activa recuperada de sesión");
 
         // 2. obtener conversación
         List<Map<String, String>> mensajes =
@@ -119,7 +118,8 @@ public class ChatService {
         try {
             return groqClient.completeChat(mensajesConSistema, model);
         } catch (Exception e) {
-            log.warn("Fallback al modelo GPT-OSS 20B", e);
+            log.warn("Fallback de modelo primario={} a modelo=openai/gpt-oss-20b errorType={}",
+                    model, e.getClass().getSimpleName());
             return groqClient.completeChat( mensajesConSistema, "openai/gpt-oss-20b" );
         }
     }

@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Cliente reutilizable para Groq API.
@@ -63,35 +64,41 @@ public class GroqClient {
             Map<String, Object> body = new HashMap<>();
             body.put("model", model);
             body.put("messages", mensajes);
-            log.info("Llamando a Groq con modelo: {}", model);
-            log.info("Groq mensajes: {}", mensajes);
-            String response = webClient.post()
-                    .uri("/v1/chat/completions")
-                    .bodyValue(body)
-                    .retrieve()
-                    .onStatus(
-                            HttpStatusCode::isError,
-                            clientResponse -> clientResponse.bodyToMono(String.class)
-                                    .flatMap(errorBody -> {
-                                        log.error("Groq HTTP {} - {}", clientResponse.statusCode(), errorBody);
-                                        return Mono.error(new GroqClientException(
-                                                "Groq respondió " + clientResponse.statusCode() + ": " + errorBody
-                                        ));
-                                    })
-                    )
-                    .bodyToMono(String.class)
+            AtomicInteger attempts = new AtomicInteger();
+            String response = Mono.defer(() -> {
+                        int attempt = attempts.incrementAndGet();
+                        long startedAt = System.nanoTime();
+                        log.info("Groq attempt started attempt={} model={}", attempt, model);
+                        return webClient.post()
+                                .uri("/v1/chat/completions")
+                                .bodyValue(body)
+                                .retrieve()
+                                .onStatus(HttpStatusCode::isError,
+                                        clientResponse -> Mono.error(new GroqClientException(
+                                                "Groq respondió con estado HTTP " + clientResponse.statusCode())))
+                                .bodyToMono(String.class)
+                                .doOnSuccess(result -> log.info(
+                                        "Groq attempt completed attempt={} model={} outcome=success durationMs={}",
+                                        attempt, model, elapsedMs(startedAt)))
+                                .doOnError(error -> log.warn(
+                                        "Groq attempt completed attempt={} model={} outcome=error errorType={} durationMs={}",
+                                        attempt, model, error.getClass().getSimpleName(), elapsedMs(startedAt)));
+                    })
                     .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                     .retry(MAX_RETRIES)
                     .block();
-            log.info("Response final: {}", response);
             if (response == null) {
                 throw new GroqClientException("Respuesta vacía de Groq");
             }
             return response;
         } catch (Exception e) {
-            log.error("Error llamando a Groq API", e);
-            throw new GroqClientException("Error comunicándose con Groq: " + e.getMessage(), e);
+            log.error("Error llamando a Groq API model={} errorType={}", model, e.getClass().getSimpleName());
+            throw new GroqClientException("Error comunicándose con Groq (" + e.getClass().getSimpleName() + ")", e);
         }
+    }
+
+    private long elapsedMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 
     /**

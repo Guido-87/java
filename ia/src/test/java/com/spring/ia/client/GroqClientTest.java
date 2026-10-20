@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,6 +21,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(OutputCaptureExtension.class)
 @DisplayName("GroqClient Tests")
 class GroqClientTest {
 
@@ -257,6 +260,23 @@ class GroqClientTest {
         // Assert
         assertTrue(result.contains("😊"));
         assertTrue(result.contains("<code>"));
+    }
+
+    @Test
+    @DisplayName("Registra intentos sin exponer mensajes ni respuesta del proveedor")
+    void logsTimingWithoutExposingConversation(CapturedOutput output) {
+        String privatePrompt = "prompt-confidencial-7f31";
+        String privateAnswer = "respuesta-confidencial-91ab";
+        setupWebClientMocks("""
+                {"choices":[{"message":{"content":"respuesta-confidencial-91ab"}}]}
+                """);
+
+        groqClient.completeChat(List.of(Map.of("role", "user", "content", privatePrompt)), "test-model");
+
+        assertFalse(output.getOut().contains(privatePrompt));
+        assertFalse(output.getOut().contains(privateAnswer));
+        assertTrue(output.getOut().contains("attempt=1"));
+        assertTrue(output.getOut().contains("durationMs="));
     }
 
     @SuppressWarnings({"unchecked"})
