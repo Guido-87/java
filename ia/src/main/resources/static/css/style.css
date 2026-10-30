@@ -14,6 +14,12 @@ body {
     height: 100vh;
 }
 
+@media (min-width: 769px) {
+    body {
+        padding-left: 15rem;
+    }
+}
+
 /* =========================
    CHAT CONTAINER
 ========================= */
@@ -155,10 +161,9 @@ button:disabled {
 ========================= */
 
 .donation-box {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-
+    position: static;
+    width: 100%;
+    margin: 0;
     background: #c62828;
     color: white;
 
@@ -172,7 +177,6 @@ button:disabled {
     flex-direction: column;
     gap: 8px;
 
-    min-width: 220px;
 }
 
 .donation-link {
@@ -186,6 +190,119 @@ button:disabled {
 .donation-alias {
     display: block;
     text-align: center;
+}
+
+/* =========================
+   AGENT INDICATOR
+========================= */
+
+.agent-widget {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 13.75rem;
+}
+
+.agent-controls {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: min(12rem, calc(100vw - 40px));
+}
+
+.agent-controls button {
+    margin-left: 0;
+    padding: 9px 12px;
+    background: #30363d;
+    border: 1px solid #484f58;
+    text-align: left;
+}
+
+.agent-controls button:hover,
+.agent-controls button[aria-expanded="true"] {
+    background: #238636;
+}
+
+.agent-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 210px;
+    width: 100%;
+    padding: 12px 34px 12px 12px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.agent-card[hidden],
+.agent-image[hidden],
+.agent-image-fallback[hidden] {
+    display: none !important;
+}
+
+.agent-image,
+.agent-image-fallback {
+    flex: 0 0 56px;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.agent-image-fallback {
+    display: grid;
+    place-items: center;
+    background: #21262d;
+    font-size: 28px;
+}
+
+.agent-info {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.agent-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #c9d1d9;
+    font-size: 0.85rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3fb950;
+}
+
+.agent-card-close {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    margin: 0;
+    padding: 2px 7px;
+    background: transparent;
+    color: #c9d1d9;
+    font-size: 1.2rem;
+}
+
+.agent-card-close:hover {
+    background: #30363d;
 }
 
 /* =========================
@@ -212,6 +329,7 @@ button:disabled {
 @media (max-width: 768px) {
     body {
         align-items: stretch;
+        padding-left: 0;
     }
 
     .chat-container {
@@ -219,15 +337,43 @@ button:disabled {
         border-radius: 0;
     }
 
+    .header {
+        padding-left: 13.25rem;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .header button {
+        margin-left: 0;
+    }
+
     .messages {
-        padding-bottom: 140px;
+        padding-bottom: 300px;
     }
 
     .donation-box {
         position: static;
-        margin: 12px;
         min-width: auto;
+        width: 100%;
         text-align: center;
+    }
+
+    .agent-widget {
+        bottom: calc(5.5rem + env(safe-area-inset-bottom));
+        left: 10px;
+        gap: 8px;
+        width: min(13.75rem, calc(100vw - 20px));
+    }
+
+    .agent-controls {
+        top: 10px;
+        left: 10px;
+        width: min(12rem, calc(100vw - 20px));
+    }
+
+    .agent-controls button {
+        padding: 8px 10px;
+        font-size: 0.8rem;
     }
 
     .input-area {

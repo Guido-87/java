@@ -21,20 +21,33 @@
         <input id="input" type="text" placeholder="Escribe tu mensaje..." />
         <button id="sendBtn" disabled>Enviar</button>
     </div>
-    <div class="donation-box">
-        <div class="donation-alias">
-            ☕ Apoyar proyecto ☕
+</div>
+<aside class="agent-widget" aria-label="Indicadores de agentes">
+    <section id="agentCard" class="agent-card" aria-live="polite" hidden>
+        <button id="hideAgentBtn" class="agent-card-close" type="button" aria-label="Ocultar agente">×</button>
+        <img id="agentImage" class="agent-image" src="" alt="" hidden>
+        <div id="agentImageFallback" class="agent-image-fallback" aria-hidden="true">🤖</div>
+        <div class="agent-info">
+            <strong id="agentName"></strong>
+            <span class="agent-status"><span class="status-dot"></span>Disponible</span>
         </div>
+    </section>
+    <div class="donation-box">
+        <div class="donation-alias">☕ Apoyar proyecto ☕</div>
         <strong class="donation-alias">Alias: Guido-87.mp</strong>
-        <a
-            href="https://mercadopago.com.ar"
-            target="_blank"
-            class="donation-link"
-        >
+        <a href="https://mercadopago.com.ar" target="_blank" rel="noopener noreferrer" class="donation-link">
             Ir a MercadoPago
         </a>
     </div>
-</div>
+    <div class="agent-controls" role="group" aria-label="Mostrar un agente">
+        <button type="button" class="agent-toggle" data-agent="enzo" aria-expanded="false" aria-controls="agentCard">Mostrar Enzo</button>
+        <button type="button" class="agent-toggle" data-agent="rucau" aria-expanded="false" aria-controls="agentCard">Mostrar Rucau</button>
+        <button type="button" class="agent-toggle" data-agent="jona" aria-expanded="false" aria-controls="agentCard">Mostrar Jona</button>
+        <button type="button" class="agent-toggle" data-agent="jesse" aria-expanded="false" aria-controls="agentCard">Mostrar Jesse</button>
+        <button type="button" class="agent-toggle" data-agent="nahitan" aria-expanded="false" aria-controls="agentCard">Mostrar Nahitan</button>
+        <button type="button" class="agent-toggle" data-agent="juli" aria-expanded="false" aria-controls="agentCard">Mostrar Juli</button>
+    </div>
+</aside>
 <script src="/js/chat.js" onerror="handleScriptError()"></script>
 </body>
 </html>

@@ -5,6 +5,12 @@ function initChat() {
     const button = document.getElementById("sendBtn");
     const newChatButton = document.getElementById("newChatBtn");
     const messages = document.getElementById("messages");
+    const agentCard = document.getElementById("agentCard");
+    const agentName = document.getElementById("agentName");
+    const agentImage = document.getElementById("agentImage");
+    const agentImageFallback = document.getElementById("agentImageFallback");
+    const hideAgentButton = document.getElementById("hideAgentBtn");
+    const agentButtons = document.querySelectorAll(".agent-toggle");
 
     if (!input || !button || !newChatButton || !messages) {
         console.error("Faltan elementos del DOM");
@@ -121,6 +127,64 @@ function initChat() {
                 void send();
             }
         });
+
+        if (agentCard && agentName && agentImage && agentImageFallback && hideAgentButton) {
+            const agentNames = {
+                enzo: "Enzo",
+                rucau: "Rucau",
+                jona: "Jona",
+                jesse: "Jesse",
+                nahitan: "Nahitan",
+                juli: "Juli"
+            };
+
+            function hideAgent() {
+                agentCard.hidden = true;
+                agentButtons.forEach((agentButton) => {
+                    agentButton.setAttribute("aria-expanded", "false");
+                    agentButton.textContent = `Mostrar ${agentNames[agentButton.dataset.agent]}`;
+                });
+            }
+
+            agentButtons.forEach((agentButton) => {
+                agentButton.addEventListener("click", () => {
+                    const selectedAgent = agentButton.dataset.agent;
+                    const displayName = agentNames[selectedAgent];
+                    if (!displayName) return;
+
+                    const isSameAgentVisible = !agentCard.hidden && agentName.textContent === displayName;
+
+                    if (isSameAgentVisible) {
+                        hideAgent();
+                        return;
+                    }
+
+                    agentName.textContent = displayName;
+                    agentImage.alt = `Imagen de ${displayName}`;
+                    agentImageFallback.textContent = "🤖";
+                    agentImageFallback.hidden = false;
+                    agentImage.hidden = true;
+                    agentImage.src = `/images/agents/${selectedAgent}.png`;
+                    agentCard.hidden = false;
+
+                    agentButtons.forEach((button) => {
+                        const active = button === agentButton;
+                        button.setAttribute("aria-expanded", String(active));
+                        button.textContent = `${active ? "Ocultar" : "Mostrar"} ${agentNames[button.dataset.agent]}`;
+                    });
+                });
+            });
+
+            agentImage.addEventListener("load", () => {
+                agentImage.hidden = false;
+                agentImageFallback.hidden = true;
+            });
+            agentImage.addEventListener("error", () => {
+                agentImage.hidden = true;
+                agentImageFallback.hidden = false;
+            });
+            hideAgentButton.addEventListener("click", hideAgent);
+        }
     }
 
     bindEvents();
