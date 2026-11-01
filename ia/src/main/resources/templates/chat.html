@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Fuente estilo ChatGPT -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=agent-scroll-20261101">
 </head>
 <body>
 <div class="chat-container">
@@ -23,15 +23,15 @@
     </div>
 </div>
 <aside class="agent-widget" aria-label="Indicadores de agentes">
-    <section id="agentCard" class="agent-card" aria-live="polite" hidden>
-        <button id="hideAgentBtn" class="agent-card-close" type="button" aria-label="Ocultar agente">×</button>
-        <img id="agentImage" class="agent-image" src="" alt="" hidden>
-        <div id="agentImageFallback" class="agent-image-fallback" aria-hidden="true">🤖</div>
-        <div class="agent-info">
-            <strong id="agentName"></strong>
-            <span class="agent-status"><span class="status-dot"></span>Disponible</span>
-        </div>
-    </section>
+    <div class="agent-controls" role="group" aria-label="Seleccionar agentes para mostrar">
+        <button type="button" class="agent-toggle" data-agent="enzo" aria-pressed="false" aria-controls="agentCards">Mostrar Enzo</button>
+        <button type="button" class="agent-toggle" data-agent="rucau" aria-pressed="false" aria-controls="agentCards">Mostrar Rucau</button>
+        <button type="button" class="agent-toggle" data-agent="jona" aria-pressed="false" aria-controls="agentCards">Mostrar Jona</button>
+        <button type="button" class="agent-toggle" data-agent="jesse" aria-pressed="false" aria-controls="agentCards">Mostrar Jesse</button>
+        <button type="button" class="agent-toggle" data-agent="nahitan" aria-pressed="false" aria-controls="agentCards">Mostrar Nahitan</button>
+        <button type="button" class="agent-toggle" data-agent="juli" aria-pressed="false" aria-controls="agentCards">Mostrar Juli</button>
+    </div>
+    <div id="agentCards" class="agent-cards" role="list" aria-label="Agentes seleccionados" aria-live="polite"></div>
     <div class="donation-box">
         <div class="donation-alias">☕ Apoyar proyecto ☕</div>
         <strong class="donation-alias">Alias: Guido-87.mp</strong>
@@ -39,16 +39,8 @@
             Ir a MercadoPago
         </a>
     </div>
-    <div class="agent-controls" role="group" aria-label="Mostrar un agente">
-        <button type="button" class="agent-toggle" data-agent="enzo" aria-expanded="false" aria-controls="agentCard">Mostrar Enzo</button>
-        <button type="button" class="agent-toggle" data-agent="rucau" aria-expanded="false" aria-controls="agentCard">Mostrar Rucau</button>
-        <button type="button" class="agent-toggle" data-agent="jona" aria-expanded="false" aria-controls="agentCard">Mostrar Jona</button>
-        <button type="button" class="agent-toggle" data-agent="jesse" aria-expanded="false" aria-controls="agentCard">Mostrar Jesse</button>
-        <button type="button" class="agent-toggle" data-agent="nahitan" aria-expanded="false" aria-controls="agentCard">Mostrar Nahitan</button>
-        <button type="button" class="agent-toggle" data-agent="juli" aria-expanded="false" aria-controls="agentCard">Mostrar Juli</button>
-    </div>
 </aside>
-<script src="/js/chat.js" onerror="handleScriptError()"></script>
+<script src="/js/chat.js?v=agent-scroll-20261101" onerror="handleScriptError()"></script>
 </body>
 </html>
 <script>

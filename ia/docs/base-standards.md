@@ -2,7 +2,7 @@
 
 ## Project context
 
-- This repository is a Java application using Spring Boot 4.1.1 and Maven.
+- This repository is a Java application using Spring Boot 4.1.2 and Maven.
 - The Maven build targets Java 25 (`maven.compiler.release`). Use the project's Maven wrapper (`mvnw.cmd`) on Windows.
 - The application provides a Spring MVC page rendered with Thymeleaf and a JSON chat endpoint. It calls the Groq API and stores conversation history in Redis.
 - The code is organized under `com.spring.ia` in `client`, `controller`, `dto`, `exception`, `service`, and `util` packages.

@@ -5,11 +5,7 @@ function initChat() {
     const button = document.getElementById("sendBtn");
     const newChatButton = document.getElementById("newChatBtn");
     const messages = document.getElementById("messages");
-    const agentCard = document.getElementById("agentCard");
-    const agentName = document.getElementById("agentName");
-    const agentImage = document.getElementById("agentImage");
-    const agentImageFallback = document.getElementById("agentImageFallback");
-    const hideAgentButton = document.getElementById("hideAgentBtn");
+    const agentCards = document.getElementById("agentCards");
     const agentButtons = document.querySelectorAll(".agent-toggle");
 
     if (!input || !button || !newChatButton || !messages) {
@@ -128,7 +124,7 @@ function initChat() {
             }
         });
 
-        if (agentCard && agentName && agentImage && agentImageFallback && hideAgentButton) {
+        if (agentCards) {
             const agentNames = {
                 enzo: "Enzo",
                 rucau: "Rucau",
@@ -137,53 +133,92 @@ function initChat() {
                 nahitan: "Nahitan",
                 juli: "Juli"
             };
+            const selectedAgents = new Set();
 
-            function hideAgent() {
-                agentCard.hidden = true;
+            function createAgentCard(agentId) {
+                const displayName = agentNames[agentId];
+                const card = document.createElement("article");
+                card.className = "agent-card";
+                card.setAttribute("role", "listitem");
+
+                const image = document.createElement("img");
+                image.className = "agent-image";
+                image.src = "/images/agents/" + agentId + ".png";
+                image.alt = "Imagen de " + displayName;
+                image.hidden = true;
+
+                const imageFallback = document.createElement("div");
+                imageFallback.className = "agent-image-fallback";
+                imageFallback.textContent = "🤖";
+                imageFallback.setAttribute("aria-hidden", "true");
+
+                image.addEventListener("load", () => {
+                    image.hidden = false;
+                    imageFallback.hidden = true;
+                });
+                image.addEventListener("error", () => {
+                    image.hidden = true;
+                    imageFallback.hidden = false;
+                });
+
+                const info = document.createElement("div");
+                info.className = "agent-info";
+
+                const name = document.createElement("strong");
+                name.textContent = displayName;
+
+                const status = document.createElement("span");
+                status.className = "agent-status";
+
+                const statusDot = document.createElement("span");
+                statusDot.className = "status-dot";
+                statusDot.setAttribute("aria-hidden", "true");
+
+                status.append(statusDot, document.createTextNode("Disponible"));
+                info.append(name, status);
+
+                const hideButton = document.createElement("button");
+                hideButton.className = "agent-card-close";
+                hideButton.type = "button";
+                hideButton.setAttribute("aria-label", "Ocultar " + displayName);
+                hideButton.textContent = "×";
+                hideButton.addEventListener("click", () => {
+                    selectedAgents.delete(agentId);
+                    renderAgentCards();
+                });
+
+                card.append(image, imageFallback, info, hideButton);
+                return card;
+            }
+
+            function renderAgentCards() {
+                const cards = Array.from(selectedAgents, createAgentCard);
+                agentCards.replaceChildren(...cards);
+
                 agentButtons.forEach((agentButton) => {
-                    agentButton.setAttribute("aria-expanded", "false");
-                    agentButton.textContent = `Mostrar ${agentNames[agentButton.dataset.agent]}`;
+                    const agentId = agentButton.dataset.agent;
+                    const displayName = agentNames[agentId];
+                    const selected = selectedAgents.has(agentId);
+
+                    agentButton.setAttribute("aria-pressed", String(selected));
+                    agentButton.textContent = (selected ? "Ocultar " : "Mostrar ") + displayName;
                 });
             }
 
             agentButtons.forEach((agentButton) => {
                 agentButton.addEventListener("click", () => {
                     const selectedAgent = agentButton.dataset.agent;
-                    const displayName = agentNames[selectedAgent];
-                    if (!displayName) return;
+                    if (!agentNames[selectedAgent]) return;
 
-                    const isSameAgentVisible = !agentCard.hidden && agentName.textContent === displayName;
-
-                    if (isSameAgentVisible) {
-                        hideAgent();
-                        return;
+                    if (selectedAgents.has(selectedAgent)) {
+                        selectedAgents.delete(selectedAgent);
+                    } else {
+                        selectedAgents.add(selectedAgent);
                     }
 
-                    agentName.textContent = displayName;
-                    agentImage.alt = `Imagen de ${displayName}`;
-                    agentImageFallback.textContent = "🤖";
-                    agentImageFallback.hidden = false;
-                    agentImage.hidden = true;
-                    agentImage.src = `/images/agents/${selectedAgent}.png`;
-                    agentCard.hidden = false;
-
-                    agentButtons.forEach((button) => {
-                        const active = button === agentButton;
-                        button.setAttribute("aria-expanded", String(active));
-                        button.textContent = `${active ? "Ocultar" : "Mostrar"} ${agentNames[button.dataset.agent]}`;
-                    });
+                    renderAgentCards();
                 });
             });
-
-            agentImage.addEventListener("load", () => {
-                agentImage.hidden = false;
-                agentImageFallback.hidden = true;
-            });
-            agentImage.addEventListener("error", () => {
-                agentImage.hidden = true;
-                agentImageFallback.hidden = false;
-            });
-            hideAgentButton.addEventListener("click", hideAgent);
         }
     }
 

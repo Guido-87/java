@@ -1,124 +1,206 @@
 # Backlog
 
-Las prioridades son relativas entre estas tareas: **1 es la más alta**. Cada elemento sigue pendiente de planificación detallada y no implica que se haya iniciado su implementación.
+Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendiente de planificación e implementación, salvo el estado verificado indicado abajo.
+
+## Estado verificado
+
+- [x] **Calidad base (30/10/2026):** `.\mvnw.cmd verify` terminó con BUILD SUCCESS; 42 pruebas sin fallos y JaCoCo con 87,17 % de cobertura (umbral: 80 %).
+- [x] **TDD:** `docs/base-standards.md` ya exige escribir primero una prueba fallida, implementar lo mínimo y refactorizar.
+- [x] **Widget visual de agentes:** los seis agentes pueden permanecer seleccionados; las tarjetas se apilan en un área con scroll vertical propio y sin scroll horizontal. El estado sigue estático (“Disponible”), sin eventos de ejecución conectados.
+- [x] **Spring AI:** las dependencias ya están en `pom.xml`; el flujo actual todavía usa directamente `GroqClient`.
 
 ## Tareas
 
-### P1 — Arquitectura limpia
+### P1 — Parche de seguridad de Spring Boot y Spring AI
 
-**Descripción:** Evaluar y aplicar una separación gradual de responsabilidades entre la lógica de aplicación, el dominio del chat y los detalles de infraestructura (proveedor de IA y Redis). Mantener la solución pequeña y compatible con el proyecto actual.
+**Estado:** cambios aplicados localmente; falta llevarlos a la rama conectada a Render y confirmar el despliegue.
 
-**Criterios de aceptación:**
+- [x] Actualizar Spring Boot 4.1.1 → 4.1.2 y Spring AI BOM 2.0.1 → 2.0.2.
+- [x] Ejecutar `.\mvnw.cmd -B -ntp verify`: BUILD SUCCESS, 42 pruebas sin fallos; JaCoCo reporta 87,17% (265/304 líneas) y el control de cobertura 87,21% (266/305; umbral 80%).
+- [x] Confirmar en el JAR generado Tomcat embebido 11.0.27, versión administrada por Boot 4.1.2.
+- [ ] En el checkout Git correspondiente, confirmar la rama conectada, crear/enviar el commit y revisar que Render termine el despliegue automático.
 
-- [ ] Se documentan los límites propuestos y las dependencias entre componentes antes de refactorizar.
-- [ ] Controladores, servicios de aplicación, proveedor de IA y persistencia tienen responsabilidades identificables.
-- [ ] Los detalles de Groq/Spring AI y Redis no se filtran a la lógica central del chat.
-- [ ] El comportamiento público existente se conserva o los cambios quedan documentados.
-- [ ] Las pruebas existentes pasan y se agregan pruebas para cualquier comportamiento modificado.
+### P1 — Actividad real de agentes
 
-### P2 — AI Service
+**Descripción:** Reemplazar el estado simulado del widget por el estado real de agentes que corren en el Codex local del usuario, visible desde la aplicación publicada en Render.
 
-**Descripción:** Consolidar la orquestación de prompts, selección de modelo, respuestas y errores en un servicio de IA con responsabilidades claras. Coordinar su diseño con la tarea de Arquitectura limpia.
-
-**Criterios de aceptación:**
-
-- [ ] La aplicación puede solicitar una respuesta de IA a través de una interfaz clara.
-- [ ] La construcción de contexto y la selección de modelo tienen comportamiento documentado y probado.
-- [ ] Los errores y respuestas vacías del proveedor se manejan de forma consistente sin exponer detalles sensibles al usuario.
-- [ ] La lógica no queda duplicada entre `ChatService` y el cliente del proveedor.
-- [ ] Hay pruebas unitarias para selección de modelo, respuesta correcta y fallos del proveedor.
-
-### P3 — Spring AI
-
-**Descripción:** Evaluar y, si aporta valor, integrar Spring AI para desacoplar la aplicación del protocolo específico del proveedor y facilitar el uso de modelos. El proyecto ya incluye dependencias de Spring AI, pero actualmente el cliente de Groq implementa llamadas HTTP propias.
+**Primera decisión:** validar la existencia de una interfaz soportada para que la aplicación en Render se conecte a Codex Desktop para Windows y observe sus agentes. La documentación pública describe App Server como un proceso Codex al que se conecta una aplicación cliente; no documenta un endpoint público de Desktop para que un sistema externo lea las tareas abiertas en esa aplicación. No confundir iniciar un App Server/worker independiente con conectarse a la instancia de Desktop. Si no hay interfaz soportada, evaluar una integración oficial alternativa antes de diseñar un puente; evitar depender de bases de datos, sockets o archivos internos no documentados.
 
 **Criterios de aceptación:**
 
-- [ ] Se documenta la decisión de migrar o conservar el cliente actual, con impacto en dependencias y capacidades.
-- [ ] Si se migra, el proveedor, modelo, URL y credenciales se configuran externamente.
-- [ ] La integración soporta las funciones requeridas por el chat, incluyendo contexto y manejo de errores.
-- [ ] Las credenciales y prompts no se escriben en logs.
-- [ ] Hay pruebas que verifican solicitudes, respuestas y errores sin depender de llamadas reales al proveedor.
+- [ ] Se confirma con documentación o prueba reproducible si Codex Desktop expone una interfaz oficialmente soportada para clientes externos, con acceso a threads/eventos y agentes activos.
+- [ ] Si existe esa interfaz, se valida desde la aplicación en Render y se documentan autorización, renovación de credenciales, facturación y aislamiento.
+- [ ] Si no existe, se documenta la limitación y se decide explícitamente si se pospone la visualización o se adopta otra arquitectura aprobada (por ejemplo, tareas iniciadas por un cliente App Server propio); esa alternativa no se presenta como observación de la app Desktop.
+- [ ] La integración elegida vincula cada ejecución con su agente, normaliza estados y permite distinguir servicio sin conexión de ausencia de tareas activas.
+- [ ] Se normalizan estados como en cola, trabajando, esperando aprobación, completado, fallido, interrumpido y desconectado.
+- [ ] Los eventos incluyen identificadores de ejecución/agente, estado, fecha y un resumen seguro, sin exponer credenciales, prompts completos ni salida sensible.
+- [ ] La interfaz recibe el estado actual y actualizaciones en vivo; al reconectar puede recuperar el estado vigente.
+- [ ] El widget conserva un estado claro cuando el servicio no está conectado o no hay ejecuciones activas.
+- [ ] Las pruebas usan eventos y procesos simulados; no requieren Codex real, API keys ni Internet.
 
-### P4 — Redis
+### P1 — Selección múltiple y scroll de agentes
 
-**Descripción:** Revisar y completar el almacenamiento de conversaciones en Redis. Actualmente se guarda una conversación por sesión con clave `chat:{userId}` y TTL de una hora.
+**Estado:** completado y comprobado localmente con los seis agentes seleccionados.
 
-**Criterios de aceptación:**
+- [x] Los seis botones permiten seleccionar agentes simultáneamente sin ocultar los demás.
+- [x] Las tarjetas aparecen debajo de los botones y se desplazan dentro de un área vertical limitada.
+- [x] El panel de apoyo queda separado del área desplazable y no se genera scroll horizontal.
 
-- [ ] El formato de almacenamiento, aislamiento por usuario/conversación y expiración están documentados.
-- [ ] Se define el comportamiento observable ante fallos de lectura y escritura de Redis.
-- [ ] Se evita perder o reemplazar silenciosamente mensajes ante fallos de persistencia.
-- [ ] Se establecen límites razonables para el tamaño y la duración de los datos almacenados.
-- [ ] Hay pruebas para lectura, escritura, expiración y fallos de Redis.
+### P2 — Pulido gráfico y responsive
 
-### P5 — Historial
+**Descripción:** revisar el acabado visual del panel de agentes en distintos tamaños de pantalla, manteniendo la selección múltiple y el scroll ya implementados.
 
-**Descripción:** Permitir recuperar y mostrar los mensajes de la conversación actual al abrir o recargar la página. Depende de acordar el contrato de persistencia de Redis.
+- [ ] Revisar espaciado, jerarquía visual y estados seleccionado/no seleccionado.
+- [ ] Comprobar que controles, tarjetas y apoyo se entiendan y se usen bien en escritorio y móvil.
+- [ ] Mantener visible el control de selección mientras se desplaza la lista de agentes.
 
-**Criterios de aceptación:**
+### P3 — Arquitectura limpia, acotada
 
-- [ ] Al recargar la aplicación se muestra el historial asociado a la sesión actual.
-- [ ] Los mensajes aparecen en orden y con el rol visual correcto.
-- [ ] Una conversación nueva o sin historial muestra un estado vacío adecuado.
-- [ ] Los errores al recuperar el historial se comunican sin borrar mensajes ya visibles.
-- [ ] Se prueba el endpoint o flujo de recuperación y el renderizado del historial.
-
-### P6 — Lista de chats
-
-**Descripción:** Permitir crear, listar y seleccionar conversaciones separadas en la interfaz. Antes de implementar, definir cómo se identifican, nombran, ordenan y aíslan las conversaciones.
+**Descripción:** Definir límites simples entre interfaz, lógica de aplicación, proveedores de IA, ejecución de agentes y persistencia. Evitar una refactorización amplia sin necesidad.
 
 **Criterios de aceptación:**
 
-- [ ] Un usuario puede iniciar una conversación nueva y volver a una conversación existente.
-- [ ] La lista muestra conversaciones del usuario actual, con título y actividad reciente.
-- [ ] Cambiar de conversación carga el historial correcto sin mezclar mensajes.
-- [ ] Los identificadores de conversación no permiten acceder a datos de otra sesión/usuario.
-- [ ] Los casos de lista vacía, errores de carga y creación de chat tienen estados visibles.
+- [ ] Se documentan los límites y dependencias antes de refactorizar.
+- [ ] La interfaz web consume contratos de aplicación; Groq/Spring AI, Codex y Redis quedan detrás de adaptadores apropiados.
+- [ ] El comportamiento público existente se conserva o se documentan los cambios.
+- [ ] Las pruebas existentes pasan y se agregan pruebas para cada comportamiento modificado.
 
-### P7 — SSE
+### P4 — Servicio de IA
 
-**Descripción:** Entregar la respuesta del modelo progresivamente mediante Server-Sent Events, desde el proveedor hasta la interfaz, en lugar de esperar la respuesta completa.
-
-**Criterios de aceptación:**
-
-- [ ] El servidor transmite fragmentos de respuesta a medida que llegan del proveedor.
-- [ ] El cliente muestra los fragmentos progresivamente y mantiene el orden correcto.
-- [ ] Se define el comportamiento de finalización, error, cancelación y desconexión del cliente.
-- [ ] El historial almacena la respuesta final completa una sola vez.
-- [ ] Hay pruebas de streaming normal, error durante el flujo y desconexión.
-
-### P8 — Resumen
-
-**Descripción:** Mejorar el resumen automático del contexto cuando la conversación crece. Actualmente `ChatService` genera un resumen al superar el límite de mensajes; se debe verificar y mejorar su conservación y tolerancia a fallos.
+**Descripción:** Separar la orquestación del chat de los clientes concretos de proveedores, coordinado con P3.
 
 **Criterios de aceptación:**
 
-- [ ] La regla que determina cuándo resumir y qué mensajes conservar está documentada.
-- [ ] El resumen conserva hechos y contexto necesarios para responder continuaciones.
-- [ ] Los resúmenes no se duplican ni se envían como mensajes visibles del usuario.
-- [ ] Un fallo al resumir tiene una alternativa definida y no provoca pérdida silenciosa de contexto.
-- [ ] Hay pruebas para el umbral, la conservación de mensajes y el fallo del proveedor.
+- [ ] El chat solicita respuestas mediante un contrato claro `AiService`.
+- [ ] Selección de modelo, contexto y errores tienen comportamiento documentado y probado.
+- [ ] El fallback distingue errores recuperables y define si cambia modelo o proveedor.
+- [ ] No se duplica la lógica entre `ChatService` y los adaptadores.
+- [ ] Hay pruebas unitarias para selección, respuesta, respuesta vacía y fallos del proveedor.
 
-### P9 — Idioma
+### P5 — Spring AI y proveedores
 
-**Descripción:** Mejorar la detección del idioma del usuario y mantener respuestas coherentes con ese idioma. La detección actual es una heurística simple para inglés y español.
+**Descripción:** Decidir si Spring AI aporta valor y, si se adopta, usarlo detrás del contrato de P4. Preparar proveedores intercambiables y soporte futuro de Ollama.
 
 **Criterios de aceptación:**
 
-- [ ] Se documentan los idiomas soportados y el idioma predeterminado.
-- [ ] Se cubren mensajes cortos, ambiguos, vacíos y con mezcla de idiomas.
-- [ ] La instrucción enviada al modelo coincide con el idioma detectado o con la preferencia configurada.
-- [ ] Los mensajes de interfaz y error mantienen una estrategia de idioma coherente.
-- [ ] Hay pruebas unitarias para detección y pruebas de servicio para la instrucción al modelo.
+- [ ] Se documenta la decisión de migrar o conservar el cliente HTTP actual.
+- [ ] Proveedor, modelo, URL y credenciales se configuran externamente.
+- [ ] Se define selección dinámica y fallback entre modelos/proveedores; no se eligen proveedores solo por ser “gratuitos” sin revisar límites, disponibilidad y condiciones vigentes.
+- [ ] Ollama puede incorporarse sin cambios en controladores ni lógica central.
+- [ ] Las pruebas verifican solicitudes, respuestas y errores sin conectarse a proveedores reales.
+- [ ] Credenciales y prompts completos no aparecen en logs.
 
-## Dependencias y secuencia sugerida
+### P6 — Redis y persistencia de conversaciones
 
-Seguir el orden de prioridad salvo que la planificación de una tarea revele una dependencia concreta:
+**Descripción:** Revisar el almacenamiento actual en Redis antes de ampliar el historial y la lista de chats.
 
-1. Arquitectura limpia → AI Service → evaluación de Spring AI.
-2. Redis → Historial → Lista de chats.
-3. Resumen e Idioma.
-4. SSE, después de definir el contrato del servicio de IA.
+**Criterios de aceptación:**
 
-Las prioridades pueden revisarse al convertir cada elemento en una propuesta OpenSpec con alcance y diseño acordados.
+- [ ] Se documentan formato, aislamiento por usuario/conversación y expiración.
+- [ ] Se define el resultado observable ante fallos de lectura y escritura.
+- [ ] Se evita reemplazar o perder mensajes silenciosamente.
+- [ ] Se establecen límites razonables para tamaño y duración.
+- [ ] Hay pruebas de lectura, escritura, expiración y fallos, sin Redis real.
+
+### P7 — Historial de la conversación actual
+
+**Descripción:** Recuperar y mostrar, al abrir o recargar, los mensajes de la conversación asociada a la sesión.
+
+**Criterios de aceptación:**
+
+- [ ] Se guardan y recuperan prompt, respuesta, rol, orden y fecha/hora.
+- [ ] Al recargar se muestra el historial correcto de la sesión.
+- [ ] Una conversación vacía muestra un estado adecuado.
+- [ ] Los errores de recuperación no borran mensajes ya visibles.
+- [ ] Se prueban endpoint/servicio y renderizado del historial.
+
+### P8 — Lista y selección de conversaciones
+
+**Descripción:** Crear conversaciones separadas y volver a seleccionar una anterior, una vez definido el contrato de persistencia de P6/P7.
+
+**Criterios de aceptación:**
+
+- [ ] El usuario puede iniciar un chat y volver a uno existente.
+- [ ] La lista muestra título y actividad reciente del usuario actual.
+- [ ] Cambiar de chat carga el historial correcto, sin mezclar conversaciones.
+- [ ] Los identificadores no permiten acceder a datos de otra sesión/usuario.
+- [ ] Hay estados visibles para lista vacía, carga, error y creación.
+
+### P9 — Selectores de modelo y personalidad
+
+**Descripción:** Permitir elegir explícitamente modelo y personalidad, además de la selección automática disponible en el backend.
+
+**Criterios de aceptación:**
+
+- [ ] La interfaz solo ofrece modelos habilitados y configurados.
+- [ ] La personalidad elegida se traduce a instrucciones controladas por el servidor.
+- [ ] Las selecciones se validan y se mantienen según una decisión documentada (sesión o conversación).
+- [ ] El selector automático actual sigue disponible.
+- [ ] Hay pruebas para opciones inválidas, selección y construcción del prompt.
+
+### P10 — Prompts e idioma
+
+**Descripción:** Mejorar la coherencia de prompts según idioma, personalidad y contexto conversacional.
+
+**Criterios de aceptación:**
+
+- [ ] Se documentan idiomas soportados y valor predeterminado.
+- [ ] Se cubren mensajes cortos, ambiguos, vacíos y mezclados.
+- [ ] La instrucción del modelo coincide con el idioma o preferencia seleccionada.
+- [ ] Mensajes de interfaz y errores siguen una estrategia coherente.
+- [ ] Hay pruebas unitarias para detección y pruebas de servicio para el prompt.
+
+### P11 — Memoria y resumen automático
+
+**Descripción:** Revisar el resumen existente y mejorar cómo conserva el contexto cuando crece la conversación.
+
+**Criterios de aceptación:**
+
+- [ ] Se documentan umbral, mensajes conservados y formato del resumen.
+- [ ] El resumen conserva hechos útiles y no se duplica ni aparece como mensaje visible.
+- [ ] Si falla la generación, se aplica una alternativa definida sin perder contexto silenciosamente.
+- [ ] Hay pruebas de umbral, conservación, resumen inválido y fallo del proveedor.
+
+### P12 — Evaluación de RAG, herramientas, agentes y MCP
+
+**Descripción:** Evaluar casos concretos antes de agregar infraestructura de recuperación o ejecución de herramientas.
+
+**Criterios de aceptación:**
+
+- [ ] Cada capacidad tiene un caso de uso y datos/fuentes definidos.
+- [ ] Se comparan complejidad, seguridad, costo y mantenimiento con la necesidad real.
+- [ ] Se documenta una decisión de implementar, postergar o descartar cada capacidad.
+- [ ] Si se implementa alguna, se crea una propuesta separada con límites y pruebas.
+
+### P13 — Streaming de respuestas del chat (SSE)
+
+**Descripción:** Enviar progresivamente la respuesta del modelo a la interfaz. Esta tarea es distinta del flujo SSE de actividad de agentes de P1.
+
+**Criterios de aceptación:**
+
+- [ ] El servidor transmite fragmentos en cuanto los recibe del proveedor.
+- [ ] El cliente muestra fragmentos en orden y conserva el historial final una sola vez.
+- [ ] Se definen finalización, error, cancelación y desconexión.
+- [ ] Hay pruebas de flujo normal, error y desconexión con proveedor simulado.
+
+### P14 — Documentación y metodología
+
+**Descripción:** Mantener los Markdown de configuración e instrucciones alineados con la arquitectura y decisiones reales.
+
+**Criterios de aceptación:**
+
+- [ ] Se documentan arquitectura y decisiones (incluida la integración de agentes y proveedores).
+- [ ] `AGENTS.md`, estándares y `openspec/config.yaml` describen el estado actual.
+- [ ] TDD continúa explícito en las instrucciones; no se duplica innecesariamente.
+- [ ] README o guía de desarrollo apunta al backlog y explica cómo ejecutar `verify`.
+
+## Dependencias y orden sugerido
+
+1. P1: validar qué ejecuciones se observarán y elegir el camino de integración; luego conectar los eventos al widget.
+2. P2: pulir la presentación gráfica y el comportamiento responsive del panel de agentes.
+3. P3 → P4 → P5: límites de arquitectura, servicio de IA y decisión/integración de Spring AI.
+4. P6 → P7 → P8: Redis, historial de la conversación actual y lista de conversaciones.
+5. P9 → P10 → P11: selectores, prompts y memoria/resúmenes.
+6. P12: evaluar RAG, herramientas, agentes y MCP mediante propuestas independientes.
+7. P13: streaming del chat, después de definir el contrato de streaming del proveedor.
+8. P14: mantener la documentación en cada cambio y completar la revisión general de Markdown.

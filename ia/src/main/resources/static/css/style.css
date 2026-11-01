@@ -164,32 +164,50 @@ button:disabled {
     position: static;
     width: 100%;
     margin: 0;
-    background: #c62828;
-    color: white;
-
-    padding: 14px 18px;
-    border-radius: 16px;
-
+    background: #161b22;
+    color: #e6edf3;
+    padding: 10px 12px;
+    border: 1px solid #30363d;
+    border-radius: 14px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
     z-index: 999;
-
     display: flex;
     flex-direction: column;
-    gap: 8px;
-
+    gap: 6px;
+    font-size: 0.8rem;
 }
 
 .donation-link {
-    color: white;
+    color: #ffffff;
     text-decoration: none;
-    font-size: 13px;
-    display: block;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.5rem;
+    background: #238636;
+}
+
+.donation-link:hover,
+.donation-link:focus-visible {
+    background: #2ea043;
 }
 
 .donation-alias {
     display: block;
-    text-align: center;
+    text-align: left;
+    line-height: 1.35;
+}
+
+.donation-box .donation-alias:first-child {
+    font-weight: 600;
+}
+
+.donation-box strong.donation-alias {
+    color: #c9d1d9;
+    font-size: 0.75rem;
 }
 
 /* =========================
@@ -198,26 +216,42 @@ button:disabled {
 
 .agent-widget {
     position: fixed;
+    top: 20px;
     bottom: 20px;
     left: 20px;
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 10px;
     width: 13.75rem;
 }
 
+.agent-cards {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 8px;
+    min-height: 0;
+    max-height: min(46vh, 34rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.agent-cards:empty {
+    display: none;
+}
+
 .agent-controls {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 1000;
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
-    width: min(12rem, calc(100vw - 40px));
+    width: 100%;
+    flex: 0 0 auto;
 }
 
 .agent-controls button {
@@ -229,7 +263,7 @@ button:disabled {
 }
 
 .agent-controls button:hover,
-.agent-controls button[aria-expanded="true"] {
+.agent-controls button[aria-pressed="true"] {
     background: #238636;
 }
 
@@ -238,8 +272,10 @@ button:disabled {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 210px;
+    box-sizing: border-box;
+    min-width: 0;
     width: 100%;
+    flex: 0 0 auto;
     padding: 12px 34px 12px 12px;
     background: #161b22;
     border: 1px solid #30363d;
@@ -348,27 +384,26 @@ button:disabled {
     }
 
     .messages {
-        padding-bottom: 300px;
+        padding-bottom: calc(12rem + env(safe-area-inset-bottom));
     }
 
     .donation-box {
         position: static;
         min-width: auto;
         width: 100%;
-        text-align: center;
+        text-align: left;
     }
 
     .agent-widget {
+        top: 10px;
         bottom: calc(5.5rem + env(safe-area-inset-bottom));
         left: 10px;
         gap: 8px;
         width: min(13.75rem, calc(100vw - 20px));
     }
 
-    .agent-controls {
-        top: 10px;
-        left: 10px;
-        width: min(12rem, calc(100vw - 20px));
+    .agent-cards {
+        max-height: min(40vh, 28rem);
     }
 
     .agent-controls button {
