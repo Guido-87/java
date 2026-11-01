@@ -1,6 +1,6 @@
 # Backlog
 
-Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendiente de planificación e implementación, salvo el estado verificado indicado abajo.
+Las prioridades son relativas: **P1 es la más alta**. Las tareas marcadas se completaron con la evidencia indicada; las demás siguen pendientes.
 
 ## Estado verificado
 
@@ -8,19 +8,23 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [x] **TDD:** `docs/base-standards.md` ya exige escribir primero una prueba fallida, implementar lo mínimo y refactorizar.
 - [x] **Widget visual de agentes:** los seis agentes pueden permanecer seleccionados; las tarjetas se apilan en un área con scroll vertical propio y sin scroll horizontal. El estado sigue estático (“Disponible”), sin eventos de ejecución conectados.
 - [x] **Spring AI:** las dependencias ya están en `pom.xml`; el flujo actual todavía usa directamente `GroqClient`.
+- [x] **Actualización de seguridad en staging (01/11/2026):** rama `feature/agentic-programming`, commit `1a86a3c` y despliegue Live en Render `chat-ia-dev`. Producción sigue en `main` y recibirá estos cambios al integrar el PR #6.
 
 ## Tareas
 
 ### P1 — Parche de seguridad de Spring Boot y Spring AI
 
-**Estado:** cambios aplicados localmente; falta llevarlos a la rama conectada a Render y confirmar el despliegue.
+**Estado:** completado en la rama de staging. La actualización está comprometida y desplegada en Render; su llegada a producción depende de integrar el PR #6.
 
 - [x] Actualizar Spring Boot 4.1.1 → 4.1.2 y Spring AI BOM 2.0.1 → 2.0.2.
 - [x] Ejecutar `.\mvnw.cmd -B -ntp verify`: BUILD SUCCESS, 42 pruebas sin fallos; JaCoCo reporta 87,17% (265/304 líneas) y el control de cobertura 87,21% (266/305; umbral 80%).
 - [x] Confirmar en el JAR generado Tomcat embebido 11.0.27, versión administrada por Boot 4.1.2.
-- [ ] En el checkout Git correspondiente, confirmar la rama conectada, crear/enviar el commit y revisar que Render termine el despliegue automático.
+- [x] Confirmar el checkout Git y la rama conectada a staging: `feature/agentic-programming`.
+- [x] Crear/enviar el commit de los cambios: `1a86a3c` (`Improve multi-agent widget and update project backlog`).
+- [x] Confirmar el despliegue automático de Render en `chat-ia-dev`: estado **Live** para el commit `1a86a3c`.
+- [ ] Integrar el PR #6 en `main` para desplegar esta actualización en producción.
 
-### P1 — Actividad real de agentes
+### P2 — Actividad real de agentes
 
 **Descripción:** Reemplazar el estado simulado del widget por el estado real de agentes que corren en el Codex local del usuario, visible desde la aplicación publicada en Render.
 
@@ -46,7 +50,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [x] Las tarjetas aparecen debajo de los botones y se desplazan dentro de un área vertical limitada.
 - [x] El panel de apoyo queda separado del área desplazable y no se genera scroll horizontal.
 
-### P2 — Pulido gráfico y responsive
+### P3 — Pulido gráfico y responsive
 
 **Descripción:** revisar el acabado visual del panel de agentes en distintos tamaños de pantalla, manteniendo la selección múltiple y el scroll ya implementados.
 
@@ -54,7 +58,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Comprobar que controles, tarjetas y apoyo se entiendan y se usen bien en escritorio y móvil.
 - [ ] Mantener visible el control de selección mientras se desplaza la lista de agentes.
 
-### P3 — Arquitectura limpia, acotada
+### P4 — Arquitectura limpia, acotada
 
 **Descripción:** Definir límites simples entre interfaz, lógica de aplicación, proveedores de IA, ejecución de agentes y persistencia. Evitar una refactorización amplia sin necesidad.
 
@@ -65,9 +69,9 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] El comportamiento público existente se conserva o se documentan los cambios.
 - [ ] Las pruebas existentes pasan y se agregan pruebas para cada comportamiento modificado.
 
-### P4 — Servicio de IA
+### P5 — Servicio de IA
 
-**Descripción:** Separar la orquestación del chat de los clientes concretos de proveedores, coordinado con P3.
+**Descripción:** Separar la orquestación del chat de los clientes concretos de proveedores, coordinado con P4.
 
 **Criterios de aceptación:**
 
@@ -77,9 +81,9 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] No se duplica la lógica entre `ChatService` y los adaptadores.
 - [ ] Hay pruebas unitarias para selección, respuesta, respuesta vacía y fallos del proveedor.
 
-### P5 — Spring AI y proveedores
+### P6 — Spring AI y proveedores
 
-**Descripción:** Decidir si Spring AI aporta valor y, si se adopta, usarlo detrás del contrato de P4. Preparar proveedores intercambiables y soporte futuro de Ollama.
+**Descripción:** Decidir si Spring AI aporta valor y, si se adopta, usarlo detrás del contrato de P5. Preparar proveedores intercambiables y soporte futuro de Ollama.
 
 **Criterios de aceptación:**
 
@@ -90,7 +94,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Las pruebas verifican solicitudes, respuestas y errores sin conectarse a proveedores reales.
 - [ ] Credenciales y prompts completos no aparecen en logs.
 
-### P6 — Redis y persistencia de conversaciones
+### P7 — Redis y persistencia de conversaciones
 
 **Descripción:** Revisar el almacenamiento actual en Redis antes de ampliar el historial y la lista de chats.
 
@@ -102,7 +106,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Se establecen límites razonables para tamaño y duración.
 - [ ] Hay pruebas de lectura, escritura, expiración y fallos, sin Redis real.
 
-### P7 — Historial de la conversación actual
+### P8 — Historial de la conversación actual
 
 **Descripción:** Recuperar y mostrar, al abrir o recargar, los mensajes de la conversación asociada a la sesión.
 
@@ -114,9 +118,9 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Los errores de recuperación no borran mensajes ya visibles.
 - [ ] Se prueban endpoint/servicio y renderizado del historial.
 
-### P8 — Lista y selección de conversaciones
+### P9 — Lista y selección de conversaciones
 
-**Descripción:** Crear conversaciones separadas y volver a seleccionar una anterior, una vez definido el contrato de persistencia de P6/P7.
+**Descripción:** Crear conversaciones separadas y volver a seleccionar una anterior, una vez definido el contrato de persistencia de P7/P8.
 
 **Criterios de aceptación:**
 
@@ -126,7 +130,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Los identificadores no permiten acceder a datos de otra sesión/usuario.
 - [ ] Hay estados visibles para lista vacía, carga, error y creación.
 
-### P9 — Selectores de modelo y personalidad
+### P10 — Selectores de modelo y personalidad
 
 **Descripción:** Permitir elegir explícitamente modelo y personalidad, además de la selección automática disponible en el backend.
 
@@ -138,7 +142,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] El selector automático actual sigue disponible.
 - [ ] Hay pruebas para opciones inválidas, selección y construcción del prompt.
 
-### P10 — Prompts e idioma
+### P11 — Prompts e idioma
 
 **Descripción:** Mejorar la coherencia de prompts según idioma, personalidad y contexto conversacional.
 
@@ -150,7 +154,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Mensajes de interfaz y errores siguen una estrategia coherente.
 - [ ] Hay pruebas unitarias para detección y pruebas de servicio para el prompt.
 
-### P11 — Memoria y resumen automático
+### P12 — Memoria y resumen automático
 
 **Descripción:** Revisar el resumen existente y mejorar cómo conserva el contexto cuando crece la conversación.
 
@@ -161,7 +165,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Si falla la generación, se aplica una alternativa definida sin perder contexto silenciosamente.
 - [ ] Hay pruebas de umbral, conservación, resumen inválido y fallo del proveedor.
 
-### P12 — Evaluación de RAG, herramientas, agentes y MCP
+### P13 — Evaluación de RAG, herramientas, agentes y MCP
 
 **Descripción:** Evaluar casos concretos antes de agregar infraestructura de recuperación o ejecución de herramientas.
 
@@ -172,9 +176,9 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Se documenta una decisión de implementar, postergar o descartar cada capacidad.
 - [ ] Si se implementa alguna, se crea una propuesta separada con límites y pruebas.
 
-### P13 — Streaming de respuestas del chat (SSE)
+### P14 — Streaming de respuestas del chat (SSE)
 
-**Descripción:** Enviar progresivamente la respuesta del modelo a la interfaz. Esta tarea es distinta del flujo SSE de actividad de agentes de P1.
+**Descripción:** Enviar progresivamente la respuesta del modelo a la interfaz. Esta tarea es distinta del flujo SSE de actividad de agentes de P2.
 
 **Criterios de aceptación:**
 
@@ -183,7 +187,7 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 - [ ] Se definen finalización, error, cancelación y desconexión.
 - [ ] Hay pruebas de flujo normal, error y desconexión con proveedor simulado.
 
-### P14 — Documentación y metodología
+### P15 — Documentación y metodología
 
 **Descripción:** Mantener los Markdown de configuración e instrucciones alineados con la arquitectura y decisiones reales.
 
@@ -196,11 +200,12 @@ Las prioridades son relativas: **P1 es la más alta**. Cada tarea sigue pendient
 
 ## Dependencias y orden sugerido
 
-1. P1: validar qué ejecuciones se observarán y elegir el camino de integración; luego conectar los eventos al widget.
-2. P2: pulir la presentación gráfica y el comportamiento responsive del panel de agentes.
-3. P3 → P4 → P5: límites de arquitectura, servicio de IA y decisión/integración de Spring AI.
-4. P6 → P7 → P8: Redis, historial de la conversación actual y lista de conversaciones.
-5. P9 → P10 → P11: selectores, prompts y memoria/resúmenes.
-6. P12: evaluar RAG, herramientas, agentes y MCP mediante propuestas independientes.
-7. P13: streaming del chat, después de definir el contrato de streaming del proveedor.
-8. P14: mantener la documentación en cada cambio y completar la revisión general de Markdown.
+1. P1 completado en staging; integrar el PR #6 para aplicar el parche de seguridad en producción.
+2. P2: validar la integración de actividad real de agentes con Codex Desktop y definir una alternativa soportada si no existe una interfaz accesible.
+3. P3: pulir la presentación gráfica y el comportamiento responsive del panel de agentes.
+4. P4 → P5 → P6: límites de arquitectura, servicio de IA y decisión/integración de Spring AI.
+5. P7 → P8 → P9: Redis, historial de la conversación actual y lista de conversaciones.
+6. P10 → P11 → P12: selectores, prompts y memoria/resúmenes.
+7. P13: evaluar RAG, herramientas, agentes y MCP mediante propuestas independientes.
+8. P14: streaming del chat, después de definir el contrato de streaming del proveedor.
+9. P15: mantener la documentación en cada cambio y completar la revisión general de Markdown.
