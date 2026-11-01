@@ -14,6 +14,11 @@
 - Treat Groq and Redis as external services. Handle failures deliberately, avoid leaking upstream response bodies to clients, and keep logs free of secrets and full user prompts.
 - Preserve session-based conversation identity and Redis expiration behavior unless the requested feature changes that contract.
 
+## Deployment
+
+- The Render service `java-1` automatically deploys commits pushed to its connected branch. Treat a push to that branch as a production deployment and verify the Render deployment status after any such push.
+- Check the current branch before pushing. Do not trigger a production deploy when the task only requires local verification or a review.
+
 ## Tests
 
 - Place tests under `src/test/java` using the same package structure as production code.

@@ -3,9 +3,12 @@ function initChat() {
 
     const input = document.getElementById("input");
     const button = document.getElementById("sendBtn");
+    const newChatButton = document.getElementById("newChatBtn");
     const messages = document.getElementById("messages");
+    const agentCards = document.getElementById("agentCards");
+    const agentButtons = document.querySelectorAll(".agent-toggle");
 
-    if (!input || !button || !messages) {
+    if (!input || !button || !newChatButton || !messages) {
         console.error("Faltan elementos del DOM");
         window.chatAppLoaded = false;
         throw new Error("UI no inicializada");
@@ -83,8 +86,32 @@ function initChat() {
         }
     }
 
+    async function startNewChat() {
+        newChatButton.disabled = true;
+        try {
+            const response = await fetch("/api/chat/new", {
+                method: "POST",
+                credentials: "include"
+            });
+            if (!response.ok) {
+                throw new Error("No se pudo iniciar un nuevo chat");
+            }
+
+            messages.replaceChildren();
+            input.value = "";
+            button.disabled = true;
+            input.focus();
+        } catch (e) {
+            console.error("Error al iniciar un nuevo chat:", e);
+            addMessage("⚠️ No se pudo iniciar un nuevo chat. Intentá nuevamente.", "bot");
+        } finally {
+            newChatButton.disabled = false;
+        }
+    }
+
     function bindEvents() {
-        button.addEventListener("click", () => void send);
+        newChatButton.addEventListener("click", () => void startNewChat());
+        button.addEventListener("click", () => void send());
 
         input.addEventListener("input", () => {
             button.disabled = !input.value.trim();
@@ -96,6 +123,103 @@ function initChat() {
                 void send();
             }
         });
+
+        if (agentCards) {
+            const agentNames = {
+                enzo: "Enzo",
+                rucau: "Rucau",
+                jona: "Jona",
+                jesse: "Jesse",
+                nahitan: "Nahitan",
+                juli: "Juli"
+            };
+            const selectedAgents = new Set();
+
+            function createAgentCard(agentId) {
+                const displayName = agentNames[agentId];
+                const card = document.createElement("article");
+                card.className = "agent-card";
+                card.setAttribute("role", "listitem");
+
+                const image = document.createElement("img");
+                image.className = "agent-image";
+                image.src = "/images/agents/" + agentId + ".png";
+                image.alt = "Imagen de " + displayName;
+                image.hidden = true;
+
+                const imageFallback = document.createElement("div");
+                imageFallback.className = "agent-image-fallback";
+                imageFallback.textContent = "🤖";
+                imageFallback.setAttribute("aria-hidden", "true");
+
+                image.addEventListener("load", () => {
+                    image.hidden = false;
+                    imageFallback.hidden = true;
+                });
+                image.addEventListener("error", () => {
+                    image.hidden = true;
+                    imageFallback.hidden = false;
+                });
+
+                const info = document.createElement("div");
+                info.className = "agent-info";
+
+                const name = document.createElement("strong");
+                name.textContent = displayName;
+
+                const status = document.createElement("span");
+                status.className = "agent-status";
+
+                const statusDot = document.createElement("span");
+                statusDot.className = "status-dot";
+                statusDot.setAttribute("aria-hidden", "true");
+
+                status.append(statusDot, document.createTextNode("Disponible"));
+                info.append(name, status);
+
+                const hideButton = document.createElement("button");
+                hideButton.className = "agent-card-close";
+                hideButton.type = "button";
+                hideButton.setAttribute("aria-label", "Ocultar " + displayName);
+                hideButton.textContent = "×";
+                hideButton.addEventListener("click", () => {
+                    selectedAgents.delete(agentId);
+                    renderAgentCards();
+                });
+
+                card.append(image, imageFallback, info, hideButton);
+                return card;
+            }
+
+            function renderAgentCards() {
+                const cards = Array.from(selectedAgents, createAgentCard);
+                agentCards.replaceChildren(...cards);
+
+                agentButtons.forEach((agentButton) => {
+                    const agentId = agentButton.dataset.agent;
+                    const displayName = agentNames[agentId];
+                    const selected = selectedAgents.has(agentId);
+
+                    agentButton.setAttribute("aria-pressed", String(selected));
+                    agentButton.textContent = (selected ? "Ocultar " : "Mostrar ") + displayName;
+                });
+            }
+
+            agentButtons.forEach((agentButton) => {
+                agentButton.addEventListener("click", () => {
+                    const selectedAgent = agentButton.dataset.agent;
+                    if (!agentNames[selectedAgent]) return;
+
+                    if (selectedAgents.has(selectedAgent)) {
+                        selectedAgents.delete(selectedAgent);
+                    } else {
+                        selectedAgents.add(selectedAgent);
+                    }
+
+                    renderAgentCards();
+                });
+            });
+        }
     }
 
     bindEvents();

@@ -7,32 +7,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Fuente estilo ChatGPT -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=agent-scroll-20261101">
 </head>
 <body>
 <div class="chat-container">
-    <div class="header">Chat IA</div>
+    <div class="header">
+        <span>Chat IA</span>
+        <button id="newChatBtn" type="button">Nuevo chat</button>
+    </div>
     <div id="messages" class="messages"></div>
     <div class="input-area">
         <label for="input" class="visually-hidden">Mensaje</label>
         <input id="input" type="text" placeholder="Escribe tu mensaje..." />
         <button id="sendBtn" disabled>Enviar</button>
     </div>
+</div>
+<aside class="agent-widget" aria-label="Indicadores de agentes">
+    <div class="agent-controls" role="group" aria-label="Seleccionar agentes para mostrar">
+        <button type="button" class="agent-toggle" data-agent="enzo" aria-pressed="false" aria-controls="agentCards">Mostrar Enzo</button>
+        <button type="button" class="agent-toggle" data-agent="rucau" aria-pressed="false" aria-controls="agentCards">Mostrar Rucau</button>
+        <button type="button" class="agent-toggle" data-agent="jona" aria-pressed="false" aria-controls="agentCards">Mostrar Jona</button>
+        <button type="button" class="agent-toggle" data-agent="jesse" aria-pressed="false" aria-controls="agentCards">Mostrar Jesse</button>
+        <button type="button" class="agent-toggle" data-agent="nahitan" aria-pressed="false" aria-controls="agentCards">Mostrar Nahitan</button>
+        <button type="button" class="agent-toggle" data-agent="juli" aria-pressed="false" aria-controls="agentCards">Mostrar Juli</button>
+    </div>
+    <div id="agentCards" class="agent-cards" role="list" aria-label="Agentes seleccionados" aria-live="polite"></div>
     <div class="donation-box">
-        <div class="donation-alias">
-            ☕ Apoyar proyecto ☕
-        </div>
+        <div class="donation-alias">☕ Apoyar proyecto ☕</div>
         <strong class="donation-alias">Alias: Guido-87.mp</strong>
-        <a
-            href="https://mercadopago.com.ar"
-            target="_blank"
-            class="donation-link"
-        >
+        <a href="https://mercadopago.com.ar" target="_blank" rel="noopener noreferrer" class="donation-link">
             Ir a MercadoPago
         </a>
     </div>
-</div>
-<script src="/js/chat.js" onerror="handleScriptError()"></script>
+</aside>
+<script src="/js/chat.js?v=agent-scroll-20261101" onerror="handleScriptError()"></script>
 </body>
 </html>
 <script>
