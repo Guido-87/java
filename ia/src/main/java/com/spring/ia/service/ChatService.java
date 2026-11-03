@@ -38,11 +38,11 @@ public class ChatService {
 
     public String chat(ChatRequest input, HttpSession session) {
         String prompt = input.prompt();
-        log.info("Longitud del prompt del usuario: {}", prompt.length());
+        log.info("User prompt length: {}", prompt.length());
 
         // El identificador de sesión también identifica la conversación activa.
         String userId = obtenerOCrearChatId(session);
-        log.debug("Conversación activa recuperada de sesión");
+        log.debug("Retrieved active conversation from session");
 
         // 2. obtener conversación
         List<Map<String, String>> mensajes =
@@ -74,7 +74,7 @@ public class ChatService {
         try {
             redisService.guardarConversacion(userId, mensajes);
         } catch (Exception e) {
-            log.error("Error guardando en Redis", e);
+            log.error("Error saving conversation to Redis", e);
         }
         return safeRespuesta;
     }
@@ -93,9 +93,9 @@ public class ChatService {
     }
 
     private String llamarIA(List<Map<String, String>> mensajes, String prompt) {
-        log.info("Entrando a llamarIA");
+        log.info("Calling the AI service");
         String systemPrompt = construirSystemPrompt(prompt);
-        log.info("System prompt generado");
+        log.info("System prompt generated");
         List<Map<String, String>> mensajesConSistema = new ArrayList<>();
         Map<String, String> systemMsg = new HashMap<>();
         systemMsg.put("role", "system");
@@ -112,13 +112,13 @@ public class ChatService {
                 .filter(m -> !esResumen(m))
                 .map(this::normalizarMensajeHistorico)
                 .forEach(mensajesConSistema::add);
-        log.info("Mensajes preparados");
+        log.info("Messages prepared");
         String model = elegirModelo(prompt);
-        log.info("Modelo seleccionado: {}", model);
+        log.info("Selected model: {}", model);
         try {
             return groqClient.completeChat(mensajesConSistema, model);
         } catch (Exception e) {
-            log.warn("Fallback de modelo primario={} a modelo=openai/gpt-oss-20b errorType={}",
+            log.warn("Falling back from primary model={} to model=openai/gpt-oss-20b errorType={}",
                     model, e.getClass().getSimpleName());
             return groqClient.completeChat( mensajesConSistema, "openai/gpt-oss-20b" );
         }
@@ -187,9 +187,9 @@ public class ChatService {
             if (esResumenValido(respuesta)) {
                 return respuesta.trim();
             }
-            log.warn("Groq devolvió un resumen con formato inesperado; se usará un contexto mínimo.");
+            log.warn("Groq returned a summary in an unexpected format; using minimal context.");
         } catch (Exception e) {
-            log.warn("No se pudo resumir la conversación; se usará un contexto mínimo.", e);
+            log.warn("Could not summarize the conversation; using minimal context.", e);
         }
         return "- No se pudo conservar el detalle de los mensajes anteriores.\n- Continuar desde los mensajes recientes disponibles.";
     }
@@ -227,15 +227,23 @@ public class ChatService {
     }
 
     private String construirSystemPrompt(String prompt) {
-        prompt = prompt != null ? prompt.toLowerCase() : "";
+        prompt = prompt != null ? prompt.toLowerCase(java.util.Locale.ROOT) : "";
         String idioma = LanguageDetector.detect(prompt);
+        boolean english = idioma.equals("en");
         String base = idioma.equals("en")
                 ? "You are a helpful AI assistant. Reply in English."
                 : "Sos un asistente útil. Respondé en español.";
         if (prompt.contains("java") ||
             prompt.contains("spring") ||
-            prompt.contains("codigo")) {
-            return base + """
+            prompt.contains("codigo") || prompt.contains("código")) {
+            String expertInstructions = english ? """
+                    You are a senior developer specializing in:
+                    - Java
+                    - Spring Boot
+                    - REST APIs
+                    - Redis
+                    Explain clearly and professionally.
+                    """ : """
                     Sos un desarrollador senior experto en:
                     - Java
                     - Spring Boot
@@ -243,12 +251,13 @@ public class ChatService {
                     - Redis
                     Explicá de forma clara y profesional.
                     """;
+            return base + "\n" + expertInstructions;
         }
 
-        if (prompt.contains("resume")) {
-            return base + """
-                    Generá respuestas breves y resumidas.
-                    """;
+        if (prompt.contains("summary") || prompt.contains("summarize") || prompt.contains("resumen") || prompt.contains("resum")) {
+            return base + (english
+                    ? "\nKeep answers concise and summarized."
+                    : "\nGenerá respuestas breves y resumidas.");
         }
         return base;
     }

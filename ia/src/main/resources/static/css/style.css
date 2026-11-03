@@ -319,12 +319,35 @@ button:disabled {
     font-size: 0.85rem;
 }
 
+.agent-card-activity {
+    min-width: 0;
+    margin-left: auto;
+    color: #c9d1d9;
+    font-size: 0.78rem;
+}
+
+.agent-card-activity summary {
+    cursor: pointer;
+    color: #8b949e;
+}
+
+.agent-card-activity p {
+    margin: 6px 0 0;
+    color: #c9d1d9;
+}
+
 .status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
     background: #3fb950;
 }
+
+.status-dot[data-status="working"],
+.status-dot[data-status="waiting_approval"] { background: #d29922; }
+.status-dot[data-status="completed"] { background: #3fb950; }
+.status-dot[data-status="failed"],
+.status-dot[data-status="disconnected"] { background: #f85149; }
 
 .agent-card-close {
     position: absolute;
@@ -416,4 +439,202 @@ button:disabled {
         bottom: 0;
         z-index: 10;
     }
+}
+
+/* =========================
+   LOCAL CODEX TASKS
+========================= */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-actions button {
+    margin: 0;
+}
+
+#openAgentTaskBtn {
+    background: #8250df;
+}
+
+#openAgentTaskBtn:hover,
+#openAgentTaskBtn:focus-visible {
+    background: #8957e5;
+}
+
+.agent-connection-status {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #30363d;
+    border-radius: 0.65rem;
+    background: #161b22;
+    color: #c9d1d9;
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
+.agent-status .status-dot[data-status="working"],
+.agent-status .status-dot[data-status="queued"] { background: #d29922; }
+
+.agent-status .status-dot[data-status="waiting_approval"] { background: #f0883e; }
+
+.agent-status .status-dot[data-status="completed"] { background: #3fb950; }
+
+.agent-status .status-dot[data-status="failed"],
+.agent-status .status-dot[data-status="interrupted"],
+.agent-status .status-dot[data-status="disconnected"] { background: #f85149; }
+
+.agent-task-dialog {
+    width: min(38rem, calc(100vw - 2rem));
+    max-height: min(90vh, 50rem);
+    margin: auto;
+    padding: 1.25rem;
+    overflow-y: auto;
+    color: #e6edf3;
+    background: #161b22;
+    border: 1px solid #484f58;
+    border-radius: 1rem;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.55);
+}
+
+.agent-task-dialog::backdrop { background: rgba(1, 4, 9, 0.78); }
+
+.agent-task-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.agent-task-dialog h1 { font-size: 1.2rem; }
+.agent-task-dialog h2 { margin-bottom: 0.5rem; font-size: 1rem; }
+.agent-task-dialog h3 { margin-bottom: 0.5rem; font-size: 0.95rem; }
+
+.agent-task-explanation,
+.agent-task-message,
+.task-summary,
+.agent-approval p {
+    margin: 0.5rem 0 0.85rem;
+    color: #c9d1d9;
+    line-height: 1.45;
+}
+
+.agent-task-dialog form label {
+    display: block;
+    margin: 0.9rem 0 0.4rem;
+    font-weight: 600;
+}
+
+.agent-task-dialog textarea,
+.agent-task-dialog select {
+    display: block;
+    width: 100%;
+    min-height: 8rem;
+    resize: vertical;
+    padding: 0.75rem;
+    border: 1px solid #484f58;
+    border-radius: 0.65rem;
+    background: #0d1117;
+    color: #e6edf3;
+    font: inherit;
+    line-height: 1.45;
+}
+
+.agent-task-dialog textarea:focus-visible {
+    outline: 2px solid #a371f7;
+    outline-offset: 2px;
+}
+
+#agentTaskApprovalMode {
+    width: min(100%, 22rem);
+    min-height: 2.75rem;
+    padding: 0.5rem 0.7rem;
+    resize: none;
+}
+
+.agent-task-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.8rem;
+}
+
+.agent-task-form-actions button { margin: 0; }
+
+.dialog-close {
+    min-width: 2.5rem;
+    margin: 0;
+    padding: 0.25rem;
+    background: transparent;
+    font-size: 1.35rem;
+}
+
+.agent-task-progress {
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #30363d;
+}
+
+.task-status-text { font-weight: 600; }
+
+.agent-task-response {
+    margin-top: 1rem;
+    padding: 0.9rem;
+    border: 1px solid #30363d;
+    border-radius: 0.65rem;
+    background: #0d1117;
+}
+
+.agent-task-response h3 { margin-bottom: 0.5rem; font-size: 0.95rem; }
+
+.agent-task-response-text {
+    max-height: 18rem;
+    margin: 0;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: #e6edf3;
+    font: inherit;
+    line-height: 1.5;
+}
+
+.agent-approval {
+    margin-top: 1rem;
+    padding: 0.9rem;
+    border: 1px solid #9e6a03;
+    border-radius: 0.65rem;
+    background: rgba(187, 128, 9, 0.12);
+}
+
+.agent-approval-details {
+    max-height: 12rem;
+    margin: 0.7rem 0;
+    padding: 0.7rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    border-radius: 0.5rem;
+    background: #0d1117;
+    color: #e6edf3;
+    font: 0.85rem/1.4 ui-monospace, monospace;
+}
+
+.secondary-button { background: #30363d; }
+
+.secondary-button:hover,
+.secondary-button:focus-visible { background: #484f58; }
+
+.interrupt-task {
+    margin: 0.8rem 0 0;
+    color: #ff7b72;
+}
+
+.agent-task-message.is-error { color: #ff7b72; }
+
+@media (max-width: 768px) {
+    .header { padding-right: 0.6rem; }
+    .header-actions { gap: 0.35rem; }
+    .header-actions button { padding: 0.45rem 0.55rem; font-size: 0.75rem; }
+    .agent-task-dialog { padding: 1rem; }
 }

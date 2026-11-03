@@ -163,7 +163,7 @@ class GroqClientTest {
     }
 
     @Test
-    @DisplayName("Debería manejar respuesta JSON malformada")
+    @DisplayName("Handles malformed JSON responses")
     void testCompleteChatMalformedJson() {
         // Arrange
         List<Map<String, String>> messages = List.of(
@@ -176,11 +176,11 @@ class GroqClientTest {
                 GroqClientException.class,
                 () -> groqClient.completeChat(messages, "test-model")
         );
-        assertTrue(exception.getMessage().contains("parseando"));
+        assertTrue(exception.getMessage().contains("parsing"));
     }
 
     @Test
-    @DisplayName("Debería lanzar GroqClientException si falla conexión")
+    @DisplayName("Throws GroqClientException when the connection fails")
     void testCompleteChatNetworkError() {
         // Arrange
         WebClient.Builder builder = mock(WebClient.Builder.class);

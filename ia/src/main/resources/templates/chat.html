@@ -2,50 +2,95 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Chat IA</title>
+    <title>Chat con IA</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Fuente estilo ChatGPT -->
+    <!-- ChatGPT-style font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css?v=agent-scroll-20261101">
+    <link rel="stylesheet" href="/css/style.css?v=agent-activity-20261103">
 </head>
 <body>
 <div class="chat-container">
     <div class="header">
-        <span>Chat IA</span>
-        <button id="newChatBtn" type="button">Nuevo chat</button>
+        <span>Chat con IA</span>
+        <div class="header-actions">
+            <button id="openAgentTaskBtn" type="button" aria-haspopup="dialog" aria-controls="agentTaskDialog">Tarea local de Codex</button>
+            <button id="newChatBtn" type="button">Nuevo chat</button>
+        </div>
     </div>
     <div id="messages" class="messages"></div>
     <div class="input-area">
         <label for="input" class="visually-hidden">Mensaje</label>
-        <input id="input" type="text" placeholder="Escribe tu mensaje..." />
+        <input id="input" type="text" placeholder="Escribí tu mensaje..." />
         <button id="sendBtn" disabled>Enviar</button>
     </div>
 </div>
-<aside class="agent-widget" aria-label="Indicadores de agentes">
-    <div class="agent-controls" role="group" aria-label="Seleccionar agentes para mostrar">
-        <button type="button" class="agent-toggle" data-agent="enzo" aria-pressed="false" aria-controls="agentCards">Mostrar Enzo</button>
-        <button type="button" class="agent-toggle" data-agent="rucau" aria-pressed="false" aria-controls="agentCards">Mostrar Rucau</button>
-        <button type="button" class="agent-toggle" data-agent="jona" aria-pressed="false" aria-controls="agentCards">Mostrar Jona</button>
-        <button type="button" class="agent-toggle" data-agent="jesse" aria-pressed="false" aria-controls="agentCards">Mostrar Jesse</button>
-        <button type="button" class="agent-toggle" data-agent="nahitan" aria-pressed="false" aria-controls="agentCards">Mostrar Nahitan</button>
-        <button type="button" class="agent-toggle" data-agent="juli" aria-pressed="false" aria-controls="agentCards">Mostrar Juli</button>
+<aside class="agent-widget" aria-label="Agent indicators">
+    <p id="agentConnectionStatus" class="agent-connection-status" role="status" aria-live="polite">Revisando la conexión local…</p>
+    <div class="agent-controls" role="group" aria-label="Elegir agentes para mostrar">
+        <button type="button" class="agent-toggle" data-agent="enzo" aria-pressed="false" aria-controls="agentCards">Mostrar a Enzo</button>
+        <button type="button" class="agent-toggle" data-agent="rucau" aria-pressed="false" aria-controls="agentCards">Mostrar a Rucau</button>
+        <button type="button" class="agent-toggle" data-agent="jona" aria-pressed="false" aria-controls="agentCards">Mostrar a Jona</button>
+        <button type="button" class="agent-toggle" data-agent="jesse" aria-pressed="false" aria-controls="agentCards">Mostrar a Jesse</button>
+        <button type="button" class="agent-toggle" data-agent="nahitan" aria-pressed="false" aria-controls="agentCards">Mostrar a Nahitan</button>
+        <button type="button" class="agent-toggle" data-agent="juli" aria-pressed="false" aria-controls="agentCards">Mostrar a Juli</button>
     </div>
     <div id="agentCards" class="agent-cards" role="list" aria-label="Agentes seleccionados" aria-live="polite"></div>
     <div class="donation-box">
-        <div class="donation-alias">☕ Apoyar proyecto ☕</div>
+        <div class="donation-alias">☕ Apoyá el proyecto ☕</div>
         <strong class="donation-alias">Alias: Guido-87.mp</strong>
         <a href="https://mercadopago.com.ar" target="_blank" rel="noopener noreferrer" class="donation-link">
-            Ir a MercadoPago
+            Abrir Mercado Pago
         </a>
     </div>
 </aside>
-<script src="/js/chat.js?v=agent-scroll-20261101" onerror="handleScriptError()"></script>
+<script src="/js/chat.js?v=agent-activity-20261103" onerror="handleScriptError()"></script>
+<dialog id="agentTaskDialog" class="agent-task-dialog" aria-labelledby="agentTaskTitle">
+    <div class="agent-task-dialog-header">
+        <h1 id="agentTaskTitle">Nueva tarea local de Codex</h1>
+        <button id="closeAgentTaskBtn" class="dialog-close" type="button" aria-label="Cerrar">×</button>
+    </div>
+    <p class="agent-task-explanation">La tarea se ejecuta en esta computadora. Codex puede pedirte aprobación antes de realizar acciones.</p>
+    <form id="agentTaskForm">
+        <label for="agentTaskPrompt">¿Qué querés que haga Codex?</label>
+        <textarea id="agentTaskPrompt" name="prompt" rows="5" maxlength="8000" required placeholder="Describí una tarea para el agente local…"></textarea>
+        <label for="agentTaskApprovalMode">Modo de aprobación</label>
+        <select id="agentTaskApprovalMode" name="approvalMode">
+            <option value="manual" selected>Manual · revisar cada solicitud</option>
+            <option value="automatic">Automático · solo acciones de bajo riesgo</option>
+        </select>
+        <p class="agent-task-explanation">En ambos modos, los cambios dentro del worktree se aprueban automáticamente. El modo automático también permite lecturas y búsquedas seguras; para otras acciones, Codex te pide aprobación.</p>
+        <div class="agent-task-form-actions">
+            <button id="submitAgentTaskBtn" type="submit" disabled>Enviar tarea</button>
+        </div>
+    </form>
+    <section id="agentTaskProgress" class="agent-task-progress" aria-live="polite" aria-atomic="true" hidden>
+        <h2>Estado de la tarea</h2>
+        <p id="agentTaskStatus" class="task-status-text"></p>
+        <p id="agentTaskSummary" class="task-summary"></p>
+        <section id="agentTaskResponse" class="agent-task-response" aria-labelledby="agentTaskResponseTitle" aria-live="polite" hidden>
+            <h3 id="agentTaskResponseTitle">Respuesta</h3>
+            <pre id="agentTaskResponseText" class="agent-task-response-text"></pre>
+        </section>
+        <section id="agentTaskApproval" class="agent-approval" aria-labelledby="agentApprovalTitle" hidden>
+            <h3 id="agentApprovalTitle">Codex necesita tu aprobación</h3>
+            <p id="agentApprovalSummary"></p>
+            <pre id="agentApprovalDetails" class="agent-approval-details" hidden></pre>
+            <div class="agent-task-form-actions">
+                <button id="approveAgentActionBtn" type="button">Aprobar</button>
+                <button id="declineAgentActionBtn" class="secondary-button" type="button">Rechazar</button>
+            </div>
+        </section>
+        <button id="interruptAgentTaskBtn" class="secondary-button interrupt-task" type="button" hidden>Interrumpir tarea</button>
+    </section>
+    <p id="agentTaskMessage" class="agent-task-message" role="status" aria-live="polite"></p>
+</dialog>
+<script src="/js/agent-tasks.js?v=approval-details-20261103"></script>
 </body>
 </html>
 <script>
 function handleScriptError() {
-    showError('❌ No se pudo cargar el chat. Revisá tu conexión o recargá la página.');
+    showError('❌ No se pudo cargar el chat. Revisá tu conexión o volvé a cargar la página.');
     disableUI();
 }
 

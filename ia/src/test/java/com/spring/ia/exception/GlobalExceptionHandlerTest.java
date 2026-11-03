@@ -17,6 +17,8 @@ import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(ChatController.class)
 class GlobalExceptionHandlerTest {
@@ -31,13 +33,27 @@ class GlobalExceptionHandlerTest {
     private CacheManager cacheManager;
 
     @Test
-    void deberiaRetornar500() throws Exception {
+    void returns500WithSpanishMessage() throws Exception {
         when(chatService.chat(any(), any()))
                 .thenThrow(new RuntimeException("boom"));
 
         mockMvc.perform(post("/api/chat")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"userId\":\"1\",\"prompt\":\"hola\"}"))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("Ocurrió un problema. Intentá de nuevo más tarde."));
+    }
+
+    @Test
+    void doesNotWriteJsonWhenAnSseConnectionFails() throws Exception {
+        when(chatService.chat(any(), any()))
+                .thenThrow(new RuntimeException("stream disconnected"));
+
+        mockMvc.perform(post("/api/chat")
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userId\":\"1\",\"prompt\":\"hola\"}"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(""));
     }
 }

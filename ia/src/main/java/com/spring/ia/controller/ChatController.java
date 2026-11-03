@@ -23,7 +23,7 @@ public class ChatController {
     @PostMapping("/chat")
     public ChatResponse chat(@Valid @RequestBody ChatRequest input,
                                 HttpSession session) {
-        log.info("POST /api/chat recibido");
+        log.info("Received POST /api/chat");
         String response = chatService.chat(input, session);
         return new ChatResponse(response);
     }

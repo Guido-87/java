@@ -46,7 +46,7 @@ class ChatControllerTest {
     }
 
     @Test
-    @DisplayName("Debería responder correctamente el chat")
+    @DisplayName("Returns a successful chat response")
     void testChat() throws Exception {
         when(chatService.chat(any(ChatRequest.class), any(HttpSession.class)))
                 .thenReturn("AI response");
@@ -58,5 +58,17 @@ class ChatControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.response").value("AI response"));
+    }
+
+    @Test
+    @DisplayName("Rejects chat prompts longer than 8000 characters")
+    void rejectsOversizedPrompt() throws Exception {
+        ChatRequest request = new ChatRequest("x".repeat(8001));
+
+        mockMvc.perform(post("/api/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.prompt").value("El mensaje no puede superar los 8000 caracteres"));
     }
 }
