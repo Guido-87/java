@@ -37,7 +37,7 @@ Las prioridades son relativas: **P1 es la más alta**. Las tareas marcadas se co
 **Criterios de aceptación:**
 
 - [x] Se revisa la documentación oficial: App Server expone eventos al cliente conectado, pero no documenta acceso externo al proceso interno de Desktop; WebSocket TCP está marcado experimental/no soportado.
-- [x] El prototipo local inicia App Server por `stdio`, mapea eventos de threads/turns/items y los publica al widget por SSE. La cobertura automatizada usa proceso/eventos simulados; la prueba manual con Codex real sigue pendiente.
+- [x] El prototipo local inicia App Server por `stdio`, mapea eventos de threads/turns/items y los publica al widget por SSE. La cobertura automatizada usa proceso/eventos simulados; el 04/11/2026 se hizo una prueba manual con Codex real y la tarea terminó con la respuesta esperada.
 - [ ] Si se elige Render, se implementa un conector local con conexión saliente TLS, autenticación por dispositivo, reconexión/heartbeat y aislamiento; no se expone el App Server local directamente a Internet.
 - [x] Se decide que el widget muestre solo ejecuciones iniciadas desde esta integración local; no observa tareas independientes de Desktop.
 - [x] La integración vincula ejecuciones con roles conocidos, normaliza estados y distingue que el servicio esté habilitado pero aún desconectado.
