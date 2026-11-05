@@ -4,6 +4,106 @@ info:
   version: 1.0.0
   description: HTTP API exposed by this Spring Boot application.
 paths:
+  /api/agent-tasks/status:
+    get:
+      summary: Get local Codex connection and task status
+      responses:
+        '200':
+          description: Current local orchestration status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTaskStatusResponse'
+  /api/agent-tasks:
+    post:
+      summary: Start a task through the local Codex App Server
+      description: Available only with the local profile. Tasks are started by this integration; Codex Desktop tasks are not observed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentTaskRequest'
+      responses:
+        '202':
+          description: Task accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTaskSnapshot'
+        '400':
+          description: Invalid task request
+        '403':
+          description: Origin is not the same loopback origin
+        '409':
+          description: Another local task is active or orchestration is disabled
+  /api/agent-tasks/{taskId}:
+    get:
+      summary: Get a task snapshot
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Current task state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTaskSnapshot'
+        '404':
+          description: Task does not belong to this session
+  /api/agent-tasks/{taskId}/events:
+    get:
+      summary: Stream task snapshots over Server-Sent Events
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Initial and updated task snapshots
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: "event: snapshot\ndata: {\"taskId\":\"...\"}"
+  /api/agent-tasks/{taskId}/approvals/{approvalId}:
+    post:
+      summary: Accept or decline a pending local approval
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - name: approvalId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [accept, decline]
+      responses:
+        '200':
+          description: Approval decision sent
+        '400':
+          description: Approval is no longer pending or cannot be accepted safely
+        '403':
+          description: Origin is not the same loopback origin
+  /api/agent-tasks/{taskId}/interrupt:
+    post:
+      summary: Interrupt a local Codex task
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Task interrupted
+        '403':
+          description: Origin is not the same loopback origin
+        '404':
+          description: Task does not belong to this session
   /api/chat:
     post:
       summary: Send a chat prompt
@@ -38,3 +138,99 @@ paths:
           description: Unexpected server error
         '503':
           description: Redis service unavailable
+components:
+  parameters:
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    AgentTaskRequest:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 8000
+          pattern: '\S'
+        approvalMode:
+          type: string
+          enum: [manual, automatic]
+          default: manual
+          description: File additions, updates, and deletions whose paths are all inside the configured workspace are always approved. Automatic mode additionally approves schema-classified read/list/search commands. Other commands, outside-workspace changes, network access, and extra permission grants remain manual.
+    AgentTaskStatusResponse:
+      type: object
+      required: [enabled, connection, approvalMode, agents]
+      properties:
+        enabled:
+          type: boolean
+        connection:
+          type: string
+          enum: [connected, disconnected, disabled]
+        approvalMode:
+          type: string
+          enum: [manual, automatic]
+        activeTask:
+          allOf:
+            - $ref: '#/components/schemas/AgentTaskSnapshot'
+          nullable: true
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentState'
+    AgentTaskSnapshot:
+      type: object
+      required: [taskId, status, approvalMode, summary, response, updatedAt, agents]
+      properties:
+        taskId:
+          type: string
+        status:
+          type: string
+          enum: [queued, working, waiting_approval, completed, failed, interrupted, disconnected]
+        approvalMode:
+          type: string
+          enum: [manual, automatic]
+        summary:
+          type: string
+        response:
+          type: string
+          nullable: true
+          description: Final assistant answer for the root task, when received.
+        updatedAt:
+          type: string
+          format: date-time
+        agents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgentState'
+        approval:
+          allOf:
+            - $ref: '#/components/schemas/AgentApproval'
+          nullable: true
+    AgentState:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          enum: [enzo_seguridad, rucau_arquitecto, jona_dev1, jesse_dev2, nahitan_devops, juli_qa]
+        status:
+          type: string
+          enum: [available, queued, working, waiting_approval, completed, failed, interrupted, disconnected]
+    AgentApproval:
+      type: object
+      required: [id, kind, summary, details]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [command, file_change]
+        summary:
+          type: string
+        details:
+          type: string
+          description: Local-only approval details. The client must render as text and offer decline only when details are insufficient.

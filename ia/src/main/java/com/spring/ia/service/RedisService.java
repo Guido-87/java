@@ -42,7 +42,7 @@ public class RedisService {
             });
         } catch (Exception e) {
             Throwable rootCause = rootCause(e);
-            log.error("Error al deserializar conversación requestId={} errorType={}",
+            log.error("Error deserializing conversation requestId={} errorType={}",
                     requestId(), rootCause.getClass().getSimpleName());
             return new ArrayList<>();
         }

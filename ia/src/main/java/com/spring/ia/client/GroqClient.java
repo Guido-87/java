@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Cliente reutilizable para Groq API.
- * Encapsula toda la lógica de comunicación HTTP con Groq.
+ * Reusable client for the Groq API.
+ * Encapsulates HTTP communication with Groq.
  */
 @Slf4j
 @Component
@@ -47,21 +47,21 @@ public class GroqClient {
     }
 
     /**
-     * Completa un chat usando Groq.
+     * Completes a chat using Groq.
      *
-     * @param mensajes Lista de mensajes en el formato OpenAI (role, content)
-     * @param model Modelo a usar (ej: "llama-3.1-70b-versatile")
-     * @return Respuesta del modelo
-     * @throws GroqClientException Si hay error en la llamada
+     * @param mensajes Messages in OpenAI format (role, content)
+     * @param model Model to use (e.g. "llama-3.1-70b-versatile")
+     * @return Model response
+     * @throws GroqClientException If the request fails
      */
     public String completeChat(List<Map<String, String>> mensajes, String model) {
-        log.info("Llamando Groq con modelo={} requestId={}", model, requestId());
+        log.info("Calling Groq with model={} requestId={}", model, requestId());
         String response = callGroqApi(mensajes, model);
         return extractResponse(response);
     }
 
     /**
-     * Realiza la llamada HTTP a Groq.
+     * Makes the HTTP request to Groq.
      */
     private String callGroqApi(List<Map<String, String>> mensajes, String model) {
         String requestId = requestId();
@@ -80,7 +80,7 @@ public class GroqClient {
                                 .retrieve()
                                 .onStatus(HttpStatusCode::isError,
                                         clientResponse -> Mono.error(new GroqClientException(
-                                                "Groq respondió con estado HTTP " + clientResponse.statusCode())))
+                                                "Groq returned HTTP status " + clientResponse.statusCode())))
                                 .bodyToMono(String.class)
                                 .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                                 .doOnSuccess(result -> log.info(
@@ -100,13 +100,13 @@ public class GroqClient {
                             .onRetryExhaustedThrow((spec, signal) -> signal.failure()))
                     .block();
             if (response == null) {
-                throw new GroqClientException("Respuesta vacía de Groq");
+                throw new GroqClientException("Empty response from Groq");
             }
             return response;
         } catch (Exception e) {
-            log.error("Error llamando a Groq API requestId={} model={} errorType={}",
+            log.error("Error calling Groq API requestId={} model={} errorType={}",
                     requestId, model, e.getClass().getSimpleName());
-            throw new GroqClientException("Error comunicándose con Groq (" + e.getClass().getSimpleName() + ")", e);
+            throw new GroqClientException("Error communicating with Groq (" + e.getClass().getSimpleName() + ")", e);
         }
     }
 
@@ -137,7 +137,7 @@ public class GroqClient {
     }
 
     /**
-     * Extrae el contenido de la respuesta de Groq.
+     * Extracts the content from the Groq response.
      */
     private String extractResponse(String responseJson) {
         try {
@@ -149,8 +149,8 @@ public class GroqClient {
                     .path("content")
                     .asText();
         } catch (Exception e) {
-            log.error("Error parseando respuesta de Groq", e);
-            throw new GroqClientException("Error parseando respuesta: " + e.getMessage(), e);
+            log.error("Error parsing Groq response", e);
+            throw new GroqClientException("Error parsing response: " + e.getMessage(), e);
         }
     }
 }

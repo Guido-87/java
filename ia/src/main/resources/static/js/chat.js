@@ -1,5 +1,5 @@
 function initChat() {
-    console.log('Chat inicializando...');
+    console.log('Initializing chat...');
 
     const input = document.getElementById("input");
     const button = document.getElementById("sendBtn");
@@ -9,9 +9,9 @@ function initChat() {
     const agentButtons = document.querySelectorAll(".agent-toggle");
 
     if (!input || !button || !newChatButton || !messages) {
-        console.error("Faltan elementos del DOM");
+        console.error("Required page elements are missing");
         window.chatAppLoaded = false;
-        throw new Error("UI no inicializada");
+        throw new Error("UI failed to initialize");
     }
 
     function addMessage(text, type) {
@@ -31,7 +31,7 @@ function initChat() {
 
         const loadingMsg = document.createElement("div");
         loadingMsg.className = "message bot";
-        loadingMsg.innerHTML = '<div class="spinner"></div> Pensando...';
+        loadingMsg.innerHTML = '<div class="spinner"></div> Pensando…';
 
         messages.appendChild(loadingMsg);
 
@@ -51,7 +51,7 @@ function initChat() {
             try {
                 data = await response.json();
             } catch {
-                // La respuesta no contiene JSON válido
+                // The response does not contain valid JSON.
             }
 
             loadingMsg.remove();
@@ -62,9 +62,9 @@ function initChat() {
                 if (response.status === 400) {
                     errorMessage = "El mensaje no es válido. Revisá lo que escribiste.";
                 } else if (response.status === 503) {
-                    errorMessage = "El servicio no está disponible temporalmente. Intentá nuevamente en unos segundos.";
+                    errorMessage = "El servicio no está disponible por el momento. Probá de nuevo en unos segundos.";
                 } else if (response.status >= 500) {
-                    errorMessage = "Ocurrió un error en el servidor. Intentá nuevamente más tarde.";
+                    errorMessage = "Ocurrió un error en el servidor. Intentá de nuevo más tarde.";
                 } else {
                     errorMessage = data.message || "No se pudo procesar el mensaje.";
                 }
@@ -76,9 +76,9 @@ function initChat() {
             addMessage(data.response, "bot");
 
         } catch (e) {
-            console.error("Error al enviar mensaje:", e);
+            console.error("Error sending message:", e);
             loadingMsg.remove();
-            addMessage("⚠️ No se pudo conectar con el servidor. Revisá tu conexión e intentá nuevamente.", "bot");
+            addMessage("⚠️ No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.", "bot");
         } finally {
             input.disabled = false;
             button.disabled = !input.value.trim();
@@ -94,7 +94,7 @@ function initChat() {
                 credentials: "include"
             });
             if (!response.ok) {
-                throw new Error("No se pudo iniciar un nuevo chat");
+                throw new Error("No se pudo iniciar un chat nuevo.");
             }
 
             messages.replaceChildren();
@@ -102,8 +102,8 @@ function initChat() {
             button.disabled = true;
             input.focus();
         } catch (e) {
-            console.error("Error al iniciar un nuevo chat:", e);
-            addMessage("⚠️ No se pudo iniciar un nuevo chat. Intentá nuevamente.", "bot");
+            console.error("Error starting a new chat:", e);
+            addMessage("⚠️ No se pudo iniciar un chat nuevo. Intentá de nuevo.", "bot");
         } finally {
             newChatButton.disabled = false;
         }
@@ -134,6 +134,33 @@ function initChat() {
                 juli: "Juli"
             };
             const selectedAgents = new Set();
+            const taskAgentStates = new Map();
+            const hiddenTaskAgents = new Set();
+            let taskAgentTaskId = null;
+            const agentStatusLabels = {
+                available: "Disponible",
+                queued: "En cola",
+                working: "Trabajando",
+                waiting_approval: "Esperando aprobación",
+                completed: "Finalizada",
+                failed: "Fallida",
+                interrupted: "Interrumpida",
+                disconnected: "Desconectada"
+            };
+
+            function updateTaskAgents(agents, taskId) {
+                if (!taskId || taskId !== taskAgentTaskId) hiddenTaskAgents.clear();
+                taskAgentTaskId = taskId || null;
+                taskAgentStates.clear();
+                if (Array.isArray(agents)) {
+                    agents.forEach((agent) => {
+                        const id = agent && String(agent.id || "").replace(/_(seguridad|arquitecto|dev1|dev2|devops|qa)$/, "");
+                        if (agentNames[id]) taskAgentStates.set(id, String(agent.status || "available").toLowerCase());
+                    });
+                }
+                renderAgentCards();
+            }
+            window.updateAgentTaskAgents = updateTaskAgents;
 
             function createAgentCard(agentId) {
                 const displayName = agentNames[agentId];
@@ -169,39 +196,62 @@ function initChat() {
 
                 const status = document.createElement("span");
                 status.className = "agent-status";
+                const currentTaskStatus = taskAgentStates.get(agentId) || "available";
+                status.dataset.status = currentTaskStatus;
 
                 const statusDot = document.createElement("span");
                 statusDot.className = "status-dot";
                 statusDot.setAttribute("aria-hidden", "true");
 
-                status.append(statusDot, document.createTextNode("Disponible"));
+                statusDot.dataset.status = currentTaskStatus;
+                status.append(statusDot, document.createTextNode(agentStatusLabels[currentTaskStatus] || "Disponible"));
                 info.append(name, status);
+
+                const activity = document.createElement("details");
+                activity.className = "agent-card-activity";
+                activity.open = ["working", "waiting_approval", "failed", "completed", "interrupted"].includes(currentTaskStatus);
+                const activitySummary = document.createElement("summary");
+                activitySummary.textContent = "Estado de la tarea";
+                const activityText = document.createElement("p");
+                activityText.textContent = agentStatusLabels[currentTaskStatus] || "Disponible";
+                activity.append(activitySummary, activityText);
 
                 const hideButton = document.createElement("button");
                 hideButton.className = "agent-card-close";
                 hideButton.type = "button";
-                hideButton.setAttribute("aria-label", "Ocultar " + displayName);
+                hideButton.setAttribute("aria-label", "Ocultar a " + displayName);
                 hideButton.textContent = "×";
                 hideButton.addEventListener("click", () => {
                     selectedAgents.delete(agentId);
+                    hiddenTaskAgents.add(agentId);
                     renderAgentCards();
                 });
 
-                card.append(image, imageFallback, info, hideButton);
+                card.append(image, imageFallback, info, activity, hideButton);
                 return card;
             }
 
             function renderAgentCards() {
-                const cards = Array.from(selectedAgents, createAgentCard);
+                const activeTaskAgents = Array.from(taskAgentStates)
+                    .filter(([, status]) => !["available", "disconnected"].includes(status))
+                    .map(([agentId]) => agentId);
+                const visibleAgents = new Set([...selectedAgents, ...activeTaskAgents]);
+                hiddenTaskAgents.forEach((agentId) => {
+                    if (!selectedAgents.has(agentId)) visibleAgents.delete(agentId);
+                });
+                const cards = Array.from(visibleAgents, createAgentCard);
                 agentCards.replaceChildren(...cards);
 
                 agentButtons.forEach((agentButton) => {
                     const agentId = agentButton.dataset.agent;
                     const displayName = agentNames[agentId];
                     const selected = selectedAgents.has(agentId);
+                    const taskStatus = taskAgentStates.get(agentId) || "available";
+                    const autoVisible = !["available", "disconnected"].includes(taskStatus) && !hiddenTaskAgents.has(agentId);
+                    const visible = selected || autoVisible;
 
-                    agentButton.setAttribute("aria-pressed", String(selected));
-                    agentButton.textContent = (selected ? "Ocultar " : "Mostrar ") + displayName;
+                    agentButton.setAttribute("aria-pressed", String(visible));
+                    agentButton.textContent = (visible ? "Ocultar a " : "Mostrar a ") + displayName;
                 });
             }
 
@@ -210,7 +260,14 @@ function initChat() {
                     const selectedAgent = agentButton.dataset.agent;
                     if (!agentNames[selectedAgent]) return;
 
-                    if (selectedAgents.has(selectedAgent)) {
+                    const taskStatus = taskAgentStates.get(selectedAgent) || "available";
+                    const autoVisible = !["available", "disconnected"].includes(taskStatus) && !hiddenTaskAgents.has(selectedAgent);
+                    if (autoVisible) {
+                        hiddenTaskAgents.add(selectedAgent);
+                        selectedAgents.delete(selectedAgent);
+                    } else if (hiddenTaskAgents.has(selectedAgent) && !["available", "disconnected"].includes(taskStatus)) {
+                        hiddenTaskAgents.delete(selectedAgent);
+                    } else if (selectedAgents.has(selectedAgent)) {
                         selectedAgents.delete(selectedAgent);
                     } else {
                         selectedAgents.add(selectedAgent);
@@ -225,7 +282,7 @@ function initChat() {
     bindEvents();
 
     window.chatAppLoaded = true;
-    console.log("Chat listo ✔");
+    console.log("Chat ready ✔");
 }
 
 initChat();

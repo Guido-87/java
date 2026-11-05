@@ -266,5 +266,25 @@ class ChatServiceTest {
         assertEquals("system", mensajes.getFirst().get("role"));
         assertTrue(mensajes.getFirst().get("content").contains("Java"));
         assertTrue(mensajes.getFirst().get("content").contains("Spring Boot"));
+        assertTrue(mensajes.getFirst().get("content").contains("Respondé en español"));
+        assertTrue(mensajes.getFirst().get("content").contains("Explicá de forma clara"));
+    }
+
+    @Test
+    @DisplayName("Keeps the complete expert prompt in English for English requests")
+    void shouldUseEnglishExpertSystemPromptForEnglishJavaRequest() {
+        when(session.getAttribute("userId")).thenReturn("user123");
+        when(redisService.obtenerConversacion(anyString())).thenReturn(new ArrayList<>());
+        when(groqClient.completeChat(anyList(), anyString())).thenReturn("answer");
+
+        chatService.chat(new ChatRequest("Please explain how to use Redis with Spring Boot"), session);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Map<String, String>>> captor = ArgumentCaptor.forClass(List.class);
+        verify(groqClient).completeChat(captor.capture(), anyString());
+        String systemPrompt = captor.getValue().getFirst().get("content");
+        assertTrue(systemPrompt.contains("Reply in English"));
+        assertTrue(systemPrompt.contains("senior developer specializing in"));
+        assertFalse(systemPrompt.contains("Explicá de forma clara"));
     }
 }

@@ -17,6 +17,15 @@ Treat the checked-in source, `pom.xml`, and `src/main/resources/application.prop
 - Keep Java names and APIs idiomatic. Keep user-facing messages in the language already used by that part of the application; technical documentation in `docs/` should be written in English.
 - Do not add dependencies or introduce architectural patterns without a concrete need.
 
+## Architecture and design principles
+
+- Apply Clean Architecture as a dependency and responsibility guide: keep HTTP concerns in controllers, orchestration in services, external-process or API details in clients, and transport models in DTOs. Keep dependencies pointed toward stable application logic; do not add layers that the use case does not need.
+- Use SOLID as practical guidance. Keep each class focused, extend behavior through clear seams, preserve interface contracts, keep interfaces small, and inject dependencies where that improves isolation or testability. Avoid abstractions that only rename a single implementation without a real boundary.
+- Follow KISS: choose the simplest design that meets the requirement and remains clear to the next maintainer.
+- Follow DRY for repeated knowledge or behavior. Share stable rules in one place, but do not couple code merely because two snippets look similar.
+- Prefer readable names, small cohesive methods, explicit error handling at system boundaries, and automated tests for behavior. Avoid premature optimization and speculative features (YAGNI).
+- Favor composition over inheritance when it keeps responsibilities easier to change. Keep security, accessibility, and observability in mind as part of the design, not as afterthoughts.
+
 ## Security and configuration
 
 - Keep credentials out of source control. Configure secrets through environment variables such as `GROQ_API_KEY` and `REDIS_URL`.
